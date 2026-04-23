@@ -87,6 +87,37 @@ Pages build and deployment source to **GitHub Actions**.
   unknown words, and related idioms.
 - Use the cluster view to inspect rhyme and phonetic-similarity relationships.
 
+## Phonetic Concepts And Resources
+
+This project uses pronunciation data rather than spelling. The phoneme labels
+come from CMUdict's ARPABET-style notation, where vowel phonemes include stress
+digits such as `0`, `1`, and `2`.
+
+- **Rhyme key**: the phrase-level phoneme tail from the last stressed vowel to
+  the end of the idiom. For example, a key like `EH1 F ER0 T` represents the
+  stressed vowel and remaining sounds in the final rhyming segment. This follows
+  the same basic idea as `pronouncing.rhyming_part`, which defines the rhyming
+  part as the sounds from the stressed syllable nearest the end through the end.
+- **Initial phonemes**: the first consonant phoneme found in each word after
+  tokenization. These are sound-based initials, so words may group together even
+  when their first letters differ.
+- **Alliteration floor**: the minimum alliteration score required by the filter.
+  The score is the share of considered words that use the most repeated initial
+  consonant phoneme. A floor of `0.50` keeps idioms where at least half of the
+  counted words share the same initial sound.
+
+Suggested resources:
+
+- [CMUdict](https://github.com/cmusphinx/cmudict): the Carnegie Mellon
+  Pronouncing Dictionary used as the pronunciation source.
+- [CMUdict symbol files](https://github.com/cmusphinx/cmudict/blob/master/cmudict.symbols):
+  the phoneme and stress-mark symbols that explain labels such as `AH0`, `EH1`,
+  and `ER0`.
+- [pronouncing documentation](https://pronouncing.readthedocs.io/en/latest/):
+  practical Python examples for CMUdict lookup, syllables, stresses, and rhymes.
+- [Poetry Foundation: alliteration](https://www.poetryfoundation.org/education/glossary/alliteration):
+  a literary definition of alliteration as repeated initial consonant sounds.
+
 ## Tests
 
 ```powershell
