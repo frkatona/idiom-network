@@ -1,0 +1,7 @@
+dash>=4.0
+networkx>=3.0
+pandas>=2.0
+plotly>=6.0
+pronouncing>=0.3.0
+rapidfuzz>=3.0
+pytest>=9.0
