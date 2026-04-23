@@ -381,7 +381,7 @@ def detail_panel(table_data: list[dict[str, Any]] | None, selected_rows: list[in
                         [
                             html.Span(item["idiom"]),
                             html.Small(
-                                f" {item['score']:.2f} · {', '.join(item['reasons'])}"
+                                f" {item['score']:.2f} - {', '.join(item['reasons'])}"
                             ),
                         ]
                     )
