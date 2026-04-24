@@ -123,3 +123,26 @@ Suggested resources:
 ```powershell
 py -3.13 -m pytest
 ```
+
+
+### todo
+- search bar for terms that need to rhyme or alliterate with idioms, not necessarily a word that appears in the idioms
+  - kinda allows the alliteration aspect with the "initial phenome" dropdown
+- min/max syllables should be a two-sided slider
+- fix how placeholder words are accounted for in syllable and alliteration calculations
+  - maybe find the most likely real substitute and use that, but highlight it in a color to signify that it is a substitute
+  - similarly, maybe idioms with extensions (currently signified with parentheses) should be treated as separate versions with the extension words highlighted as a certain color
+    - maybe two columns for cases where there are such cases?  overcomplicating?
+- sort by column (e.g., AZ/ZA; increasing/decreasing syllables, etc.)
+- source and method for adding additional idioms and adding a label for the type of phrase's origin (american vs chinese vs modern etc.)
+- checkbox to include non-idiomatic phrases that are just rich in symbolism
+- checkbox to include hints for phonemes next to phonemes in dropdown (e.g., "a" in "cat")
+  - make sure they're sorted in a way that makes sense to the user (e.g., all "A" sounds together, etc.)
+
+Questions
+- how is the alliteration floor calculated?  why do phrases like "bug someone" have a floor of 0.5?
+- how are the initials calculated?  "All balled up" is "L B"
+- what are "unknown words"?"
+- CMU details
+  - secondary stress
+  - how are the rhyme keys calculated?
