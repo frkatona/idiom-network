@@ -262,6 +262,8 @@ HELP_TOPICS = [
         "title": "Phoneme pronunciation guide",
         "example": "K AE1 T = cat",
         "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
+        "wikipedia_label": "Phoneme on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/Phoneme",
         "guide": [
             {"phone": "AA", "segments": [("f", False), ("a", True), ("ther", False)]},
             {"phone": "AE", "segments": [("c", False), ("a", True), ("t", False)]},
@@ -299,6 +301,8 @@ HELP_TOPICS = [
         "title": "Rhyme key",
         "example": "EH1 F ER0 T",
         "copy": "A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.",
+        "wikipedia_label": "Rhyme on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/Rhyme",
         "notes": [
             "Use it to find idioms whose endings sound alike.",
             "Spelling does not matter; the ARPABET sound codes do.",
@@ -311,6 +315,8 @@ HELP_TOPICS = [
         "title": "Initials",
         "example": "cat -> K, phone -> F",
         "copy": "Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, and phone and fun share F even though they do not share the same first letter.",
+        "wikipedia_label": "Syllable onset on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/Syllable#Onset",
         "notes": [
             "Words that begin with a vowel may not add an initial consonant.",
             "The stopword option can skip small words such as a, the, of, and to.",
@@ -323,6 +329,8 @@ HELP_TOPICS = [
         "title": "Alliteration floor",
         "example": "0.67 = 2 of 3 counted initials match",
         "copy": "The floor is the minimum repeated-initial score an idiom must reach. The score is the share of counted words using the most common initial sound.",
+        "wikipedia_label": "Alliteration on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/Alliteration",
         "notes": [
             "0.00 lets every idiom through.",
             "0.50 keeps idioms where at least half of the counted initials match.",
@@ -335,6 +343,8 @@ HELP_TOPICS = [
         "title": "Stress",
         "example": "1 0 1",
         "copy": "Stress marks show which syllables are emphasized in pronunciation. Here, 1 means stressed and 0 means unstressed.",
+        "wikipedia_label": "Stress (linguistics) on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/Stress_(linguistics)",
         "notes": [
             "ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.",
             "The app treats primary and secondary stress as stressed.",
@@ -358,6 +368,15 @@ def help_topic(topic: dict[str, Any]) -> html.Div:
         [
             html.H3(topic["title"]),
             html.P(topic["copy"]),
+            html.P(
+                html.A(
+                    topic["wikipedia_label"],
+                    href=topic["wikipedia_url"],
+                    target="_blank",
+                    rel="noreferrer noopener",
+                ),
+                className="help-link-row",
+            ),
             html.Div(
                 [
                     html.Span("Example"),
@@ -389,7 +408,15 @@ def help_topic(topic: dict[str, Any]) -> html.Div:
 def help_modal() -> html.Div:
     return html.Div(
         [
-            html.Div(className="help-backdrop"),
+            html.Button(
+                "",
+                id="help-backdrop",
+                className="help-backdrop",
+                title="Close phonetics guide",
+                type="button",
+                tabIndex=-1,
+                **{"aria-label": "Close phonetics guide"},
+            ),
             html.Div(
                 [
                     html.Div(
@@ -409,6 +436,15 @@ def help_modal() -> html.Div:
                             ),
                         ],
                         className="help-modal-header",
+                    ),
+                    html.Button(
+                        "",
+                        id="help-escape-signal",
+                        className="help-escape-signal",
+                        title="Escape close signal",
+                        type="button",
+                        tabIndex=-1,
+                        **{"aria-hidden": "true"},
                     ),
                     html.P(
                         "These labels are sound-based. Read the phoneme codes as compact pronunciation hints, then use the filters to compare idioms by how they sound.",
@@ -642,7 +678,7 @@ app.title = "Idiom Phonetics Explorer"
 syllable_marks = {
     value: str(value)
     for value in range(MIN_SYLLABLES, MAX_SYLLABLES + 1)
-    if value in {MIN_SYLLABLES, MAX_SYLLABLES} or value % 2 == 0
+    if value in {MIN_SYLLABLES, MAX_SYLLABLES} or value % 2 == 1
 }
 
 app.layout = html.Div(
@@ -926,9 +962,11 @@ def update_detail(table_data, active_cell):
     Output("help-open", "aria-expanded"),
     Input("help-open", "n_clicks"),
     Input("help-close", "n_clicks"),
+    Input("help-backdrop", "n_clicks"),
+    Input("help-escape-signal", "n_clicks"),
     prevent_initial_call=True,
 )
-def toggle_help(open_clicks, close_clicks):
+def toggle_help(open_clicks, close_clicks, backdrop_clicks, escape_clicks):
     trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
     if trigger == "help-open":
         return "help-modal is-open", "true"

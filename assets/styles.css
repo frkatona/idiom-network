@@ -119,8 +119,22 @@ body {
 .help-backdrop {
   position: absolute;
   inset: 0;
+  border: 0;
   background: rgba(36, 40, 43, 0.54);
   backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+
+.help-escape-signal {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .help-dialog {
@@ -264,6 +278,23 @@ body {
   line-height: 1.55;
 }
 
+.help-link-row {
+  margin: 10px 0 0;
+}
+
+.help-link-row a {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+}
+
+.help-link-row a:hover,
+.help-link-row a:focus-visible {
+  color: #25574f;
+}
+
 .help-example {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -385,10 +416,6 @@ body {
 .controls .Select--single > .Select-control .Select-value,
 .controls .Select-input {
   line-height: 36px;
-}
-
-.controls .Select-menu-outer {
-  max-height: 360px;
 }
 
 .controls .VirtualizedSelectOption,
