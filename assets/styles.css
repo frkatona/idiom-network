@@ -337,6 +337,11 @@ body {
   line-height: 1.25;
 }
 
+.phoneme-card u {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
 .controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(220px, 1fr));
@@ -367,6 +372,30 @@ body {
   color: var(--ink);
   font: inherit;
   text-transform: none;
+}
+
+.controls .Select-control {
+  min-height: 38px;
+  border: 1px solid #c8bfb2;
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.controls .Select-placeholder,
+.controls .Select--single > .Select-control .Select-value,
+.controls .Select-input {
+  line-height: 36px;
+}
+
+.controls .Select-menu-outer {
+  max-height: 360px;
+}
+
+.controls .VirtualizedSelectOption,
+.controls .VirtualizedSelectFocusedOption {
+  min-height: 30px;
+  padding: 5px 10px;
+  line-height: 20px;
 }
 
 .wide-control {
@@ -419,8 +448,6 @@ body {
 
 .detail-panel {
   align-self: start;
-  position: sticky;
-  top: 12px;
 }
 
 .graph-panel {
@@ -573,7 +600,4 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .detail-panel {
-    position: static;
-  }
 }

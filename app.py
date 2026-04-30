@@ -7,7 +7,7 @@ from typing import Any
 
 import networkx as nx
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, callback_context, dash_table, dcc, html
+from dash import Dash, Input, Output, State, callback_context, dash_table, dcc, html
 from rapidfuzz import fuzz
 
 from phonetics import build_dataset, build_indices, dataset_stats, write_csv, write_json
@@ -154,6 +154,57 @@ def table_rows(records: list[dict[str, Any]], ignore_stopwords: bool) -> list[di
     return rows
 
 
+def default_active_cell(table_data: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if not table_data:
+        return None
+    first_row = table_data[0]
+    return {
+        "row": 0,
+        "column": 0,
+        "column_id": "idiom",
+        "row_id": first_row["id"],
+    }
+
+
+def active_cell_for_data(
+    table_data: list[dict[str, Any]],
+    current_active_cell: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not table_data:
+        return None
+
+    if current_active_cell and current_active_cell.get("row_id") is not None:
+        active_row_id = current_active_cell["row_id"]
+        for row_index, row in enumerate(table_data):
+            if row["id"] == active_row_id:
+                return {
+                    "row": row_index,
+                    "column": current_active_cell.get("column", 0),
+                    "column_id": current_active_cell.get("column_id", "idiom"),
+                    "row_id": active_row_id,
+                }
+
+    return default_active_cell(table_data)
+
+
+def table_style(selected_row_id: int | None) -> list[dict[str, Any]]:
+    styles = [
+        {
+            "if": {"state": "active"},
+            "backgroundColor": "#dbe9e6",
+            "border": "1px solid #33776b",
+        }
+    ]
+    if selected_row_id is not None:
+        styles.append(
+            {
+                "if": {"filter_query": f"{{id}} = {selected_row_id}"},
+                "backgroundColor": "#dbe9e6",
+            }
+        )
+    return styles
+
+
 def group_list(title: str, groups: list[tuple[str, list[dict[str, Any]]]]) -> html.Div:
     if not groups:
         return html.Div("No matching groups.", className="empty-state")
@@ -206,6 +257,43 @@ def alliteration_groups(
 
 HELP_TOPICS = [
     {
+        "value": "phonemes",
+        "label": "Phonemes",
+        "title": "Phoneme pronunciation guide",
+        "example": "K AE1 T = cat",
+        "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
+        "guide": [
+            {"phone": "AA", "segments": [("f", False), ("a", True), ("ther", False)]},
+            {"phone": "AE", "segments": [("c", False), ("a", True), ("t", False)]},
+            {"phone": "AH", "segments": [("s", False), ("u", True), ("n", False)]},
+            {"phone": "AO", "segments": [("l", False), ("aw", True)]},
+            {"phone": "AW", "segments": [("c", False), ("ow", True)]},
+            {"phone": "AY", "segments": [("m", False), ("y", True)]},
+            {"phone": "EH", "segments": [("b", False), ("e", True), ("d", False)]},
+            {"phone": "ER", "segments": [("b", False), ("ir", True), ("d", False)]},
+            {"phone": "EY", "segments": [("d", False), ("ay", True)]},
+            {"phone": "IH", "segments": [("s", False), ("i", True), ("t", False)]},
+            {"phone": "IY", "segments": [("s", False), ("ee", True)]},
+            {"phone": "OW", "segments": [("g", False), ("o", True)]},
+            {"phone": "OY", "segments": [("b", False), ("oy", True)]},
+            {"phone": "UH", "segments": [("p", False), ("u", True), ("t", False)]},
+            {"phone": "UW", "segments": [("bl", False), ("ue", True)]},
+            {"phone": "CH", "segments": [("ch", True), ("air", False)]},
+            {"phone": "DH", "segments": [("th", True), ("is", False)]},
+            {"phone": "HH", "segments": [("h", True), ("at", False)]},
+            {"phone": "JH", "segments": [("j", True), ("am", False)]},
+            {"phone": "NG", "segments": [("si", False), ("ng", True)]},
+            {"phone": "SH", "segments": [("sh", True), ("oe", False)]},
+            {"phone": "TH", "segments": [("th", True), ("in", False)]},
+            {"phone": "ZH", "segments": [("mea", False), ("s", True), ("ure", False)]},
+        ],
+        "notes": [
+            "Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.",
+            "Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.",
+            "Read a phrase left to right as sounds, not spelling: F OW1 N is phone.",
+        ],
+    },
+    {
         "value": "rhyme",
         "label": "Rhyme Key",
         "title": "Rhyme key",
@@ -221,8 +309,8 @@ HELP_TOPICS = [
         "value": "initials",
         "label": "Initials",
         "title": "Initials",
-        "example": "B L D",
-        "copy": "Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, but phone and fun do not.",
+        "example": "cat -> K, phone -> F",
+        "copy": "Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, and phone and fun share F even though they do not share the same first letter.",
         "notes": [
             "Words that begin with a vowel may not add an initial consonant.",
             "The stopword option can skip small words such as a, the, of, and to.",
@@ -253,44 +341,16 @@ HELP_TOPICS = [
             "Stress matters for rhyme because the rhyme key begins near the final stressed vowel.",
         ],
     },
-    {
-        "value": "phonemes",
-        "label": "Phonemes",
-        "title": "Phoneme pronunciation guide",
-        "example": "K AE1 T = cat",
-        "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
-        "guide": [
-            ("AA", "father"),
-            ("AE", "cat"),
-            ("AH", "strut or sofa"),
-            ("AO", "thought"),
-            ("AW", "cow"),
-            ("AY", "my"),
-            ("EH", "bed"),
-            ("ER", "bird"),
-            ("EY", "day"),
-            ("IH", "sit"),
-            ("IY", "see"),
-            ("OW", "go"),
-            ("OY", "boy"),
-            ("UH", "book"),
-            ("UW", "too"),
-            ("CH", "chair"),
-            ("DH", "this"),
-            ("HH", "hat"),
-            ("JH", "judge"),
-            ("NG", "sing"),
-            ("SH", "shoe"),
-            ("TH", "thin"),
-            ("ZH", "measure"),
-        ],
-        "notes": [
-            "Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.",
-            "Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.",
-            "Read a phrase left to right as sounds, not spelling: F OW1 N is phone.",
-        ],
-    },
 ]
+
+
+def phoneme_segments_markup(segments: list[tuple[str, bool]]) -> html.Span:
+    return html.Span(
+        [
+            html.U(text) if underlined else text
+            for text, underlined in segments
+        ]
+    )
 
 
 def help_topic(topic: dict[str, Any]) -> html.Div:
@@ -309,12 +369,12 @@ def help_topic(topic: dict[str, Any]) -> html.Div:
                 [
                     html.Div(
                         [
-                            html.Code(phone),
-                            html.Span(word),
+                            html.Code(guide_item["phone"]),
+                            phoneme_segments_markup(guide_item["segments"]),
                         ],
                         className="phoneme-card",
                     )
-                    for phone, word in topic.get("guide", [])
+                    for guide_item in topic.get("guide", [])
                 ],
                 className="phoneme-guide",
             )
@@ -520,14 +580,18 @@ def network_figure(records: list[dict[str, Any]], ignore_stopwords: bool) -> go.
     return figure
 
 
-def detail_panel(table_data: list[dict[str, Any]] | None, selected_rows: list[int] | None):
+def detail_panel(
+    table_data: list[dict[str, Any]] | None,
+    active_cell: dict[str, Any] | None,
+):
     if not table_data:
         return html.Div("Select filters that return at least one idiom.", className="empty-state")
 
-    row_index = selected_rows[0] if selected_rows else 0
-    if row_index >= len(table_data):
-        row_index = 0
-    record = RECORD_BY_ID[table_data[row_index]["id"]]
+    row_id = active_cell.get("row_id") if active_cell else None
+    visible_row_ids = {row["id"] for row in table_data}
+    if row_id is None or row_id not in visible_row_ids:
+        row_id = table_data[0]["id"]
+    record = RECORD_BY_ID[row_id]
     related = record.get("related_idioms", [])
 
     return html.Div(
@@ -644,6 +708,8 @@ app.layout = html.Div(
                             options=make_rhyme_options(),
                             placeholder="Any rhyme",
                             clearable=True,
+                            optionHeight=30,
+                            maxHeight=360,
                         ),
                     ]
                 ),
@@ -655,6 +721,8 @@ app.layout = html.Div(
                             options=make_initial_options(),
                             placeholder="Any initial",
                             clearable=True,
+                            optionHeight=30,
+                            maxHeight=360,
                         ),
                     ]
                 ),
@@ -725,8 +793,7 @@ app.layout = html.Div(
                             ],
                             data=[],
                             page_size=15,
-                            row_selectable="single",
-                            selected_rows=[0],
+                            active_cell=None,
                             sort_action="native",
                             filter_action="native",
                             style_as_list_view=True,
@@ -749,7 +816,7 @@ app.layout = html.Div(
                             },
                             style_data_conditional=[
                                 {
-                                    "if": {"state": "selected"},
+                                    "if": {"state": "active"},
                                     "backgroundColor": "#dbe9e6",
                                     "border": "1px solid #33776b",
                                 }
@@ -791,6 +858,7 @@ app.layout = html.Div(
 @app.callback(
     Output("results-summary", "children"),
     Output("idiom-table", "data"),
+    Output("idiom-table", "active_cell"),
     Output("rhyme-groups", "children"),
     Output("alliteration-groups", "children"),
     Output("cluster-graph", "figure"),
@@ -800,6 +868,7 @@ app.layout = html.Div(
     Input("initial-phone", "value"),
     Input("alliteration-threshold", "value"),
     Input("options", "value"),
+    State("idiom-table", "active_cell"),
 )
 def update_results(
     query,
@@ -808,6 +877,7 @@ def update_results(
     selected_initial,
     threshold,
     options,
+    current_active_cell,
 ):
     options = options or []
     ignore_stopwords = "ignore_stopwords" in options
@@ -826,9 +896,11 @@ def update_results(
             html.Span("Table shows the first 500 matches; refine filters for tighter exploration."),
         ]
     )
+    rows = table_rows(records, ignore_stopwords)
     return (
         summary,
-        table_rows(records, ignore_stopwords),
+        rows,
+        active_cell_for_data(rows, current_active_cell),
         rhyme_groups(records),
         alliteration_groups(records, ignore_stopwords, threshold or 0),
         network_figure(records, ignore_stopwords),
@@ -837,11 +909,16 @@ def update_results(
 
 @app.callback(
     Output("detail-panel", "children"),
-    Input("idiom-table", "data"),
-    Input("idiom-table", "selected_rows"),
+    Output("idiom-table", "style_data_conditional"),
+    Input("idiom-table", "derived_viewport_data"),
+    Input("idiom-table", "active_cell"),
 )
-def update_detail(table_data, selected_rows):
-    return detail_panel(table_data, selected_rows)
+def update_detail(table_data, active_cell):
+    row_id = active_cell.get("row_id") if active_cell else None
+    visible_row_ids = {row["id"] for row in table_data} if table_data else set()
+    if (row_id is None or row_id not in visible_row_ids) and table_data:
+        row_id = table_data[0]["id"]
+    return detail_panel(table_data, active_cell), table_style(row_id)
 
 
 @app.callback(
