@@ -218,6 +218,27 @@ STATIC_CSS = """
     grid-template-columns: 1fr;
   }
 }
+
+.cluster-legend text {
+  fill: #333;
+  font-family: inherit;
+}
+
+.nodes text {
+  font-family: inherit;
+  pointer-events: none;
+  fill: #222;
+}
+
+.links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+
+.graph-legend {
+  font-size: 13px;
+  color: #333;
+}
 """
 
 
@@ -230,6 +251,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
   <link rel="stylesheet" href="./assets/styles.css">
   <link rel="stylesheet" href="./assets/static.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -271,7 +293,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
           <section id="help-panel-rhyme" class="help-tab-panel is-active" role="tabpanel" aria-labelledby="help-tab-rhyme" data-help-panel="rhyme">
             <h3>Rhyme key</h3>
             <p>A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.</p>
-            <div class="help-example"><span>Example</span><code>EH1 F ER0 T</code></div>
+            <div class="help-example"><span>Example</span><code>EH1 F ER0 T</code><span>Phrase</span><strong>an A for effort</strong></div>
             <ul>
               <li>Use it to find idioms whose endings sound alike.</li>
               <li>Spelling does not matter; the ARPABET sound codes do.</li>
@@ -280,8 +302,8 @@ INDEX_TEMPLATE = r"""<!doctype html>
           </section>
           <section id="help-panel-initials" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-initials" data-help-panel="initials" hidden>
             <h3>Initials</h3>
-            <p>Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, but phone and fun do not.</p>
-            <div class="help-example"><span>Example</span><code>B L D</code></div>
+            <p>Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, and phone and fun share F even though they do not share the same first letter.</p>
+            <div class="help-example"><span>Example</span><code>L K B</code><span>Phrase</span><strong>let the cat out of the bag (stopwords ignored)</strong></div>
             <ul>
               <li>Words that begin with a vowel may not add an initial consonant.</li>
               <li>The stopword option can skip small words such as a, the, of, and to.</li>
@@ -291,7 +313,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
           <section id="help-panel-alliteration" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-alliteration" data-help-panel="alliteration" hidden>
             <h3>Alliteration floor</h3>
             <p>The floor is the minimum repeated-initial score an idiom must reach. The score is the share of counted words using the most common initial sound.</p>
-            <div class="help-example"><span>Example</span><code>0.67 = 2 of 3 counted initials match</code></div>
+            <div class="help-example"><span>Example</span><code>0.67 (D F F)</code><span>Phrase</span><strong>add fuel to the fire</strong></div>
             <ul>
               <li>0.00 lets every idiom through.</li>
               <li>0.50 keeps idioms where at least half of the counted initials match.</li>
@@ -301,7 +323,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
           <section id="help-panel-stress" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-stress" data-help-panel="stress" hidden>
             <h3>Stress</h3>
             <p>Stress marks show which syllables are emphasized in pronunciation. Here, 1 means stressed and 0 means unstressed.</p>
-            <div class="help-example"><span>Example</span><code>1 0 1</code></div>
+            <div class="help-example"><span>Example</span><code>1 0 1</code><span>Phrase</span><strong>by and by</strong></div>
             <ul>
               <li>ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.</li>
               <li>The app treats primary and secondary stress as stressed.</li>
@@ -311,7 +333,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
           <section id="help-panel-phonemes" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-phonemes" data-help-panel="phonemes" hidden>
             <h3>Phoneme pronunciation guide</h3>
             <p>Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.</p>
-            <div class="help-example"><span>Example</span><code>K AE1 T = cat</code></div>
+            <div class="help-example"><span>Example</span><code>K AE1 T = cat</code><span>Phrase</span><strong>let the cat out of the bag</strong></div>
             <div class="phoneme-guide">
               <div class="phoneme-card"><code>AA</code><span>father</span></div>
               <div class="phoneme-card"><code>AE</code><span>cat</span></div>
@@ -529,7 +551,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
       }
       els.table.innerHTML = `
         <table class="static-table">
-          <thead><tr><th>Idiom</th><th>Syllables</th><th>Rhyme Key</th><th>Initials</th><th>Alliteration</th><th>Unknown</th></tr></thead>
+          <thead><tr><th>Idiom</th><th>Syllables</th><th>Rhyme Key</th><th>Initials</th><th>Stress</th><th>Alliteration</th></tr></thead>
           <tbody>
             ${rows.map(record => `
               <tr>
@@ -537,8 +559,8 @@ INDEX_TEMPLATE = r"""<!doctype html>
                 <td>${record.syllable_count}</td>
                 <td>${escapeHtml(record.rhyme_key || "")}</td>
                 <td>${escapeHtml(initials(record).join(" "))}</td>
+                <td>${escapeHtml(record.stress_pattern.join("") || "")}</td>
                 <td>${alliteration(record).toFixed(2)}</td>
-                <td>${escapeHtml(record.unknown_words.join(", "))}</td>
               </tr>`).join("")}
           </tbody>
         </table>`;
@@ -601,34 +623,162 @@ INDEX_TEMPLATE = r"""<!doctype html>
     }
 
     function renderGraph() {
-      const points = state.filtered.slice(0, 180);
+      // D3 cluster-force network that links idioms by related scores and groups by rhyme key
+      const points = state.filtered.slice(0, 300);
+      els.graph.innerHTML = ""; // clear previous contents
       if (!points.length) {
-        Plotly.react(els.graph, [], { annotations: [{ text: "No idioms match the current filters.", x: 0.5, y: 0.5, xref: "paper", yref: "paper", showarrow: false }] }, { displayModeBar: false });
+        const p = document.createElement('p');
+        p.className = 'empty-state';
+        p.textContent = 'No idioms match the current filters.';
+        els.graph.appendChild(p);
         return;
       }
+
+      const width = els.graph.clientWidth || 900;
+      const height = Math.max(300, els.graph.clientHeight || 520);
+
+      // map idiom text to record id for related links
+      const idiomToId = new Map(state.records.map(r => [r.idiom, r.id]));
       const rhymeCounts = countValues(points.map(record => record.rhyme_key).filter(Boolean));
-      const trace = {
-        type: "scatter",
-        mode: "markers",
-        x: points.map(record => record.syllable_count),
-        y: points.map(record => alliteration(record)),
-        marker: {
-          size: points.map(record => 9 + Math.min(18, (rhymeCounts[record.rhyme_key] || 1) * 2)),
-          color: points.map(record => rhymeCounts[record.rhyme_key] || 1),
-          colorscale: "Viridis",
-          line: { width: 1, color: "#2f3437" },
-          colorbar: { title: "Rhyme cluster" }
-        },
-        text: points.map(record => `<b>${escapeHtml(record.idiom)}</b><br>Syllables: ${record.syllable_count}<br>Rhyme: ${escapeHtml(record.rhyme_key || "none")}<br>Initials: ${escapeHtml(initials(record).join(" ") || "none")}`),
-        hovertemplate: "%{text}<extra></extra>"
-      };
-      Plotly.react(els.graph, [trace], {
-        margin: { l: 50, r: 20, t: 10, b: 45 },
-        paper_bgcolor: "#f7f4ef",
-        plot_bgcolor: "#f7f4ef",
-        xaxis: { title: "Syllable count", dtick: 1 },
-        yaxis: { title: "Alliteration score", range: [-0.05, 1.05] }
-      }, { displayModeBar: false, responsive: true });
+
+      // build rhyme cluster keys (only those with more than one member)
+      const clusterKeys = [...new Set(points.map(p => p.rhyme_key).filter(k => k && (rhymeCounts[k] > 1)))];
+
+      // nodes: idioms + cluster nodes
+      const nodes = [];
+      const clusterNodes = clusterKeys.map((k, i) => ({ id: `cluster:${k}`, label: k, type: 'cluster', index: i }));
+      const idSet = new Set();
+      points.forEach(record => {
+        nodes.push({
+          id: record.id,
+          label: record.idiom,
+          type: 'idiom',
+          group: record.rhyme_key || 'none',
+          size: 6 + Math.min(18, (rhymeCounts[record.rhyme_key] || 1) * 2),
+          recordId: record.id
+        });
+        idSet.add(record.id);
+      });
+      clusterNodes.forEach(c => nodes.push(c));
+
+      // links: idiom -> cluster, and idiom -> related idiom (if present in current points)
+      const links = [];
+      points.forEach(record => {
+        const k = record.rhyme_key;
+        if (k && rhymeCounts[k] > 1) {
+          links.push({ source: record.id, target: `cluster:${k}`, value: 1 });
+        }
+        (record.related_idioms || []).forEach(rel => {
+          const targetId = idiomToId.get(rel.idiom);
+          if (typeof targetId !== 'undefined' && idSet.has(targetId) && targetId !== record.id) {
+            links.push({ source: record.id, target: targetId, value: rel.score || 0.3 });
+          }
+        });
+      });
+
+      const svg = d3.select(els.graph).append('svg')
+        .attr('width', '100%')
+        .attr('height', height)
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .style('background', '#f7f4ef');
+
+      const g = svg.append('g');
+
+      const color = d3.scaleOrdinal(d3.schemeTableau10).domain(clusterKeys);
+
+      const link = g.append('g')
+          .attr('class', 'links')
+        .selectAll('line')
+        .data(links)
+        .enter().append('line')
+          .attr('stroke-width', d => Math.max(1, d.value * 2))
+          .attr('stroke', '#9aa5a8')
+          .attr('opacity', 0.6);
+
+      const node = g.append('g')
+          .attr('class', 'nodes')
+        .selectAll('g')
+        .data(nodes)
+        .enter().append('g')
+          .attr('data-id', d => d.id)
+          .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+      node.append('circle')
+        .attr('r', d => d.type === 'cluster' ? 18 : d.size)
+        .attr('fill', d => d.type === 'cluster' ? '#ffffff' : (d.group && color(d.group) ? color(d.group) : '#7a7f83'))
+        .attr('stroke', d => d.type === 'cluster' ? '#2f3437' : '#2f3437')
+        .attr('stroke-width', d => d.type === 'cluster' ? 2 : 1);
+
+      node.append('text')
+        .attr('x', d => d.type === 'cluster' ? 22 : 10)
+        .attr('y', 4)
+        .text(d => d.type === 'cluster' ? (d.label.length > 18 ? d.label.slice(0, 15) + '…' : d.label) : (d.label.length > 28 ? d.label.slice(0, 25) + '…' : d.label))
+        .style('font-size', d => d.type === 'cluster' ? '12px' : '10px')
+        .style('fill', '#222');
+
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.target && String(d.target).startsWith('cluster:') ? 40 : 60).strength(0.6))
+        .force('charge', d3.forceManyBody().strength(d => d.type === 'cluster' ? -400 : -60))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => (d.type === 'cluster' ? 24 : (d.size + 6))))
+        .on('tick', ticked);
+
+      if (clusterKeys.length) {
+        const centers = new Map();
+        clusterKeys.forEach((k, i) => {
+          const x = (i + 1) * (width / (clusterKeys.length + 1));
+          centers.set(k, { x, y: height / 2 });
+        });
+        simulation.force('x', d3.forceX(d => (d.type === 'idiom' && centers.has(d.group)) ? centers.get(d.group).x : width / 2).strength(0.12));
+        simulation.force('y', d3.forceY(d => (d.type === 'idiom' && centers.has(d.group)) ? centers.get(d.group).y : height / 2).strength(0.12));
+      }
+
+      svg.call(d3.zoom().on('zoom', (event) => g.attr('transform', event.transform)));
+
+      node.on('click', (event, d) => {
+        if (d.type === 'idiom') {
+          state.selectedId = d.recordId;
+          renderDetail();
+        }
+      }).on('mouseover', function(event, d) {
+        d3.select(this).select('circle').attr('stroke-width', 3);
+      }).on('mouseout', function(event, d) {
+        d3.select(this).select('circle').attr('stroke-width', d.type === 'cluster' ? 2 : 1);
+      });
+
+      function ticked() {
+        link
+          .attr('x1', d => findNodePos(d.source).x)
+          .attr('y1', d => findNodePos(d.source).y)
+          .attr('x2', d => findNodePos(d.target).x)
+          .attr('y2', d => findNodePos(d.target).y);
+
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+      }
+
+      function findNodePos(ref) {
+        return (typeof ref === 'object') ? { x: ref.x, y: ref.y } : (nodes.find(n => n.id === ref) || { x: width/2, y: height/2 });
+      }
+
+      function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
     }
 
     function escapeHtml(value) {

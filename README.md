@@ -146,3 +146,9 @@ Questions
 - CMU details
   - secondary stress
   - how are the rhyme keys calculated?
+
+
+add 'stress' column
+remove 'unknown' column
+
+cluster view improved usability

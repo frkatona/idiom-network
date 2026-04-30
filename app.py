@@ -147,8 +147,8 @@ def table_rows(records: list[dict[str, Any]], ignore_stopwords: bool) -> list[di
                 "syllables": record["syllable_count"],
                 "rhyme_key": record["rhyme_key"],
                 "initials": " ".join(all_initials(record, ignore_stopwords)),
+                "stress": "".join(str(bit) for bit in record["stress_pattern"]),
                 "alliteration": alliteration_value(record, ignore_stopwords),
-                "unknown": ", ".join(record["unknown_words"]),
             }
         )
     return rows
@@ -261,6 +261,7 @@ HELP_TOPICS = [
         "label": "Phonemes",
         "title": "Phoneme pronunciation guide",
         "example": "K AE1 T = cat",
+        "phrase": "let the cat out of the bag",
         "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
         "wikipedia_label": "ARPABET on Wikipedia",
         "wikipedia_url": "https://en.wikipedia.org/wiki/ARPABET",
@@ -300,6 +301,7 @@ HELP_TOPICS = [
         "label": "Rhyme Key",
         "title": "Rhyme key",
         "example": "EH1 F ER0 T",
+        "phrase": "an A for effort",
         "copy": "A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.",
         "wikipedia_label": "Rhyme on Wikipedia",
         "wikipedia_url": "https://en.wikipedia.org/wiki/Rhyme",
@@ -313,7 +315,8 @@ HELP_TOPICS = [
         "value": "initials",
         "label": "Initials",
         "title": "Initials",
-        "example": "cat -> K, phone -> F",
+        "example": "L K B",
+        "phrase": "let the cat out of the bag (stopwords ignored)",
         "copy": "Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, and phone and fun share F even though they do not share the same first letter.",
         "wikipedia_label": "Syllable onset on Wikipedia",
         "wikipedia_url": "https://en.wikipedia.org/wiki/Syllable#Onset",
@@ -327,7 +330,8 @@ HELP_TOPICS = [
         "value": "alliteration",
         "label": "Alliteration Floor",
         "title": "Alliteration floor",
-        "example": "0.67 = 2 of 3 counted initials match",
+        "example": "0.67 (D F F)",
+        "phrase": "add fuel to the fire",
         "copy": "The floor is the minimum repeated-initial score an idiom must reach. The score is the share of counted words using the most common initial sound.",
         "wikipedia_label": "Alliteration on Wikipedia",
         "wikipedia_url": "https://en.wikipedia.org/wiki/Alliteration",
@@ -342,6 +346,7 @@ HELP_TOPICS = [
         "label": "Stress",
         "title": "Stress",
         "example": "1 0 1",
+        "phrase": "by and by",
         "copy": "Stress marks show which syllables are emphasized in pronunciation. Here, 1 means stressed and 0 means unstressed.",
         "wikipedia_label": "Stress (linguistics) on Wikipedia",
         "wikipedia_url": "https://en.wikipedia.org/wiki/Stress_(linguistics)",
@@ -381,6 +386,11 @@ def help_topic(topic: dict[str, Any]) -> html.Div:
                 [
                     html.Span("Example"),
                     html.Code(topic["example"]),
+                    *(
+                        [html.Span("Phrase"), html.Strong(topic["phrase"])]
+                        if topic.get("phrase")
+                        else []
+                    ),
                 ],
                 className="help-example",
             ),
@@ -817,13 +827,13 @@ app.layout = html.Div(
                                 {"name": "Syllables", "id": "syllables", "type": "numeric"},
                                 {"name": "Rhyme Key", "id": "rhyme_key"},
                                 {"name": "Initials", "id": "initials"},
+                                {"name": "Stress", "id": "stress"},
                                 {
                                     "name": "Alliteration",
                                     "id": "alliteration",
                                     "type": "numeric",
                                     "format": {"specifier": ".2f"},
                                 },
-                                {"name": "Unknown", "id": "unknown"},
                             ],
                             data=[],
                             page_size=15,
