@@ -418,6 +418,16 @@ body {
   line-height: 36px;
 }
 
+.controls .dash-dropdown-content {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.controls .dash-options-list.dash-dropdown-options {
+  max-height: 360px !important;
+  overflow-y: auto !important;
+}
+
 .controls .VirtualizedSelectOption,
 .controls .VirtualizedSelectFocusedOption {
   min-height: 30px;

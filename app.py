@@ -262,8 +262,8 @@ HELP_TOPICS = [
         "title": "Phoneme pronunciation guide",
         "example": "K AE1 T = cat",
         "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
-        "wikipedia_label": "Phoneme on Wikipedia",
-        "wikipedia_url": "https://en.wikipedia.org/wiki/Phoneme",
+        "wikipedia_label": "ARPABET on Wikipedia",
+        "wikipedia_url": "https://en.wikipedia.org/wiki/ARPABET",
         "guide": [
             {"phone": "AA", "segments": [("f", False), ("a", True), ("ther", False)]},
             {"phone": "AE", "segments": [("c", False), ("a", True), ("t", False)]},
@@ -745,7 +745,6 @@ app.layout = html.Div(
                             placeholder="Any rhyme",
                             clearable=True,
                             optionHeight=30,
-                            maxHeight=360,
                         ),
                     ]
                 ),
@@ -758,7 +757,6 @@ app.layout = html.Div(
                             placeholder="Any initial",
                             clearable=True,
                             optionHeight=30,
-                            maxHeight=360,
                         ),
                     ]
                 ),
