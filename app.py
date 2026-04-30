@@ -841,6 +841,20 @@ app.layout = html.Div(
                             sort_action="native",
                             filter_action="native",
                             style_as_list_view=True,
+                            css=[
+                                {
+                                    "selector": ".dash-spreadsheet-inner th.dash-header > div",
+                                    "rule": "align-items: center; justify-content: center;",
+                                },
+                                {
+                                    "selector": ".dash-spreadsheet-inner th.dash-header div.column-header-name",
+                                    "rule": "flex-grow: 0; flex-shrink: 0;",
+                                },
+                                {
+                                    "selector": ".dash-spreadsheet-inner th.dash-header div.column-actions",
+                                    "rule": "flex-grow: 0; flex-shrink: 0; margin-left: 6px;",
+                                },
+                            ],
                             style_cell={
                                 "fontFamily": "Inter, Segoe UI, sans-serif",
                                 "fontSize": 13,
@@ -848,11 +862,24 @@ app.layout = html.Div(
                                 "whiteSpace": "normal",
                                 "height": "auto",
                             },
+                            style_cell_conditional=[
+                                {
+                                    "if": {"column_id": "alliteration"},
+                                    "minWidth": "150px",
+                                    "width": "150px",
+                                }
+                            ],
                             style_header={
                                 "backgroundColor": "#efe8dc",
                                 "fontWeight": 700,
                                 "border": "0",
                             },
+                            style_header_conditional=[
+                                {
+                                    "if": {"column_id": "alliteration"},
+                                    "minWidth": "150px",
+                                }
+                            ],
                             style_data={
                                 "backgroundColor": "#fffdf9",
                                 "border": "0",
