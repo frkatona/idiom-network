@@ -239,12 +239,113 @@ INDEX_TEMPLATE = r"""<!doctype html>
         <p>__RECORD_COUNT__ American idioms indexed by syllables, rhyme, initial phonemes, and phonetic similarity.</p>
         <p class="static-note">Static GitHub Pages build. Data is loaded in your browser from this subpage.</p>
       </div>
-      <div class="dataset-meta">
-        <span>Records</span><strong>__RECORD_COUNT__</strong>
-        <span>Syllables</span><strong>__MIN_SYLLABLES__-__MAX_SYLLABLES__</strong>
-        <span>Rhyme clusters</span><strong>__RHYME_CLUSTER_COUNT__</strong>
+      <div class="masthead-tools">
+        <button id="help-open" class="help-button" type="button" title="Open phonetics guide" aria-label="Open phonetics guide" aria-haspopup="dialog" aria-expanded="false">?</button>
+        <div class="dataset-meta">
+          <span>Records</span><strong>__RECORD_COUNT__</strong>
+          <span>Syllables</span><strong>__MIN_SYLLABLES__-__MAX_SYLLABLES__</strong>
+          <span>Rhyme clusters</span><strong>__RHYME_CLUSTER_COUNT__</strong>
+        </div>
       </div>
     </header>
+
+    <div id="help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="help-backdrop" data-close-help></div>
+      <div class="help-dialog" role="document">
+        <div class="help-modal-header">
+          <div>
+            <p class="help-kicker">Phonetic Guide</p>
+            <h2 id="help-title">How the sound filters work</h2>
+          </div>
+          <button id="help-close" class="help-close-button" type="button" title="Close help" aria-label="Close help">&times;</button>
+        </div>
+        <p class="help-intro">These labels are sound-based. Read the phoneme codes as compact pronunciation hints, then use the filters to compare idioms by how they sound.</p>
+        <div class="help-tabs-shell">
+          <div class="help-tabs" role="tablist" aria-label="Phonetics lessons">
+            <button id="help-tab-rhyme" class="help-tab help-tab-selected" type="button" role="tab" aria-selected="true" aria-controls="help-panel-rhyme" data-help-tab="rhyme">Rhyme Key</button>
+            <button id="help-tab-initials" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-initials" data-help-tab="initials">Initials</button>
+            <button id="help-tab-alliteration" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-alliteration" data-help-tab="alliteration">Alliteration Floor</button>
+            <button id="help-tab-stress" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-stress" data-help-tab="stress">Stress</button>
+            <button id="help-tab-phonemes" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-phonemes" data-help-tab="phonemes">Phonemes</button>
+          </div>
+          <section id="help-panel-rhyme" class="help-tab-panel is-active" role="tabpanel" aria-labelledby="help-tab-rhyme" data-help-panel="rhyme">
+            <h3>Rhyme key</h3>
+            <p>A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.</p>
+            <div class="help-example"><span>Example</span><code>EH1 F ER0 T</code></div>
+            <ul>
+              <li>Use it to find idioms whose endings sound alike.</li>
+              <li>Spelling does not matter; the ARPABET sound codes do.</li>
+              <li>Blank keys mean the app could not find enough pronunciation data.</li>
+            </ul>
+          </section>
+          <section id="help-panel-initials" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-initials" data-help-panel="initials" hidden>
+            <h3>Initials</h3>
+            <p>Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, but phone and fun do not.</p>
+            <div class="help-example"><span>Example</span><code>B L D</code></div>
+            <ul>
+              <li>Words that begin with a vowel may not add an initial consonant.</li>
+              <li>The stopword option can skip small words such as a, the, of, and to.</li>
+              <li>Use the Initial Phoneme filter to gather idioms that start with a chosen sound.</li>
+            </ul>
+          </section>
+          <section id="help-panel-alliteration" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-alliteration" data-help-panel="alliteration" hidden>
+            <h3>Alliteration floor</h3>
+            <p>The floor is the minimum repeated-initial score an idiom must reach. The score is the share of counted words using the most common initial sound.</p>
+            <div class="help-example"><span>Example</span><code>0.67 = 2 of 3 counted initials match</code></div>
+            <ul>
+              <li>0.00 lets every idiom through.</li>
+              <li>0.50 keeps idioms where at least half of the counted initials match.</li>
+              <li>1.00 keeps only phrases where every counted initial matches.</li>
+            </ul>
+          </section>
+          <section id="help-panel-stress" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-stress" data-help-panel="stress" hidden>
+            <h3>Stress</h3>
+            <p>Stress marks show which syllables are emphasized in pronunciation. Here, 1 means stressed and 0 means unstressed.</p>
+            <div class="help-example"><span>Example</span><code>1 0 1</code></div>
+            <ul>
+              <li>ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.</li>
+              <li>The app treats primary and secondary stress as stressed.</li>
+              <li>Stress matters for rhyme because the rhyme key begins near the final stressed vowel.</li>
+            </ul>
+          </section>
+          <section id="help-panel-phonemes" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-phonemes" data-help-panel="phonemes" hidden>
+            <h3>Phoneme pronunciation guide</h3>
+            <p>Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.</p>
+            <div class="help-example"><span>Example</span><code>K AE1 T = cat</code></div>
+            <div class="phoneme-guide">
+              <div class="phoneme-card"><code>AA</code><span>father</span></div>
+              <div class="phoneme-card"><code>AE</code><span>cat</span></div>
+              <div class="phoneme-card"><code>AH</code><span>strut or sofa</span></div>
+              <div class="phoneme-card"><code>AO</code><span>thought</span></div>
+              <div class="phoneme-card"><code>AW</code><span>cow</span></div>
+              <div class="phoneme-card"><code>AY</code><span>my</span></div>
+              <div class="phoneme-card"><code>EH</code><span>bed</span></div>
+              <div class="phoneme-card"><code>ER</code><span>bird</span></div>
+              <div class="phoneme-card"><code>EY</code><span>day</span></div>
+              <div class="phoneme-card"><code>IH</code><span>sit</span></div>
+              <div class="phoneme-card"><code>IY</code><span>see</span></div>
+              <div class="phoneme-card"><code>OW</code><span>go</span></div>
+              <div class="phoneme-card"><code>OY</code><span>boy</span></div>
+              <div class="phoneme-card"><code>UH</code><span>book</span></div>
+              <div class="phoneme-card"><code>UW</code><span>too</span></div>
+              <div class="phoneme-card"><code>CH</code><span>chair</span></div>
+              <div class="phoneme-card"><code>DH</code><span>this</span></div>
+              <div class="phoneme-card"><code>HH</code><span>hat</span></div>
+              <div class="phoneme-card"><code>JH</code><span>judge</span></div>
+              <div class="phoneme-card"><code>NG</code><span>sing</span></div>
+              <div class="phoneme-card"><code>SH</code><span>shoe</span></div>
+              <div class="phoneme-card"><code>TH</code><span>thin</span></div>
+              <div class="phoneme-card"><code>ZH</code><span>measure</span></div>
+            </div>
+            <ul>
+              <li>Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.</li>
+              <li>Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.</li>
+              <li>Read a phrase left to right as sounds, not spelling: F OW1 N is phone.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
 
     <section class="controls static-controls">
       <label><span>Search</span><input id="search" type="text" placeholder="Type an idiom or phrase fragment"></label>
@@ -298,7 +399,12 @@ INDEX_TEMPLATE = r"""<!doctype html>
       detail: document.getElementById("detail-panel"),
       rhymeGroups: document.getElementById("rhyme-groups"),
       alliterationGroups: document.getElementById("alliteration-groups"),
-      graph: document.getElementById("cluster-graph")
+      graph: document.getElementById("cluster-graph"),
+      helpOpen: document.getElementById("help-open"),
+      helpClose: document.getElementById("help-close"),
+      helpModal: document.getElementById("help-modal"),
+      helpTabs: document.querySelectorAll("[data-help-tab]"),
+      helpPanels: document.querySelectorAll("[data-help-panel]")
     };
 
     fetch("./data/idioms_phonetic.json")
@@ -312,6 +418,43 @@ INDEX_TEMPLATE = r"""<!doctype html>
     for (const control of [els.search, els.rhyme, els.initial, els.minSyllables, els.maxSyllables, els.alliteration, els.ignoreStopwords, els.hideUnknown]) {
       control.addEventListener("input", update);
       control.addEventListener("change", update);
+    }
+
+    els.helpOpen.addEventListener("click", openHelp);
+    els.helpClose.addEventListener("click", closeHelp);
+    els.helpModal.querySelector("[data-close-help]").addEventListener("click", closeHelp);
+    els.helpTabs.forEach(button => {
+      button.addEventListener("click", () => selectHelpTab(button.dataset.helpTab));
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && els.helpModal.classList.contains("is-open")) {
+        closeHelp();
+      }
+    });
+
+    function openHelp() {
+      els.helpModal.classList.add("is-open");
+      els.helpOpen.setAttribute("aria-expanded", "true");
+      els.helpClose.focus();
+    }
+
+    function closeHelp() {
+      els.helpModal.classList.remove("is-open");
+      els.helpOpen.setAttribute("aria-expanded", "false");
+      els.helpOpen.focus();
+    }
+
+    function selectHelpTab(name) {
+      els.helpTabs.forEach(button => {
+        const selected = button.dataset.helpTab === name;
+        button.classList.toggle("help-tab-selected", selected);
+        button.setAttribute("aria-selected", selected ? "true" : "false");
+      });
+      els.helpPanels.forEach(panel => {
+        const selected = panel.dataset.helpPanel === name;
+        panel.classList.toggle("is-active", selected);
+        panel.hidden = !selected;
+      });
     }
 
     function hydrateOptions(records) {

@@ -7,7 +7,7 @@ from typing import Any
 
 import networkx as nx
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, dash_table, dcc, html
+from dash import Dash, Input, Output, callback_context, dash_table, dcc, html
 from rapidfuzz import fuzz
 
 from phonetics import build_dataset, build_indices, dataset_stats, write_csv, write_json
@@ -202,6 +202,183 @@ def alliteration_groups(
         key=lambda item: (-len(item[1]), item[0]),
     )
     return group_list("Alliteration groups", groups)
+
+
+HELP_TOPICS = [
+    {
+        "value": "rhyme",
+        "label": "Rhyme Key",
+        "title": "Rhyme key",
+        "example": "EH1 F ER0 T",
+        "copy": "A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.",
+        "notes": [
+            "Use it to find idioms whose endings sound alike.",
+            "Spelling does not matter; the ARPABET sound codes do.",
+            "Blank keys mean the app could not find enough pronunciation data.",
+        ],
+    },
+    {
+        "value": "initials",
+        "label": "Initials",
+        "title": "Initials",
+        "example": "B L D",
+        "copy": "Initials are first consonant sounds from counted words, not first letters. Sound is what matters: cat and kite share K, but phone and fun do not.",
+        "notes": [
+            "Words that begin with a vowel may not add an initial consonant.",
+            "The stopword option can skip small words such as a, the, of, and to.",
+            "Use the Initial Phoneme filter to gather idioms that start with a chosen sound.",
+        ],
+    },
+    {
+        "value": "alliteration",
+        "label": "Alliteration Floor",
+        "title": "Alliteration floor",
+        "example": "0.67 = 2 of 3 counted initials match",
+        "copy": "The floor is the minimum repeated-initial score an idiom must reach. The score is the share of counted words using the most common initial sound.",
+        "notes": [
+            "0.00 lets every idiom through.",
+            "0.50 keeps idioms where at least half of the counted initials match.",
+            "1.00 keeps only phrases where every counted initial matches.",
+        ],
+    },
+    {
+        "value": "stress",
+        "label": "Stress",
+        "title": "Stress",
+        "example": "1 0 1",
+        "copy": "Stress marks show which syllables are emphasized in pronunciation. Here, 1 means stressed and 0 means unstressed.",
+        "notes": [
+            "ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.",
+            "The app treats primary and secondary stress as stressed.",
+            "Stress matters for rhyme because the rhyme key begins near the final stressed vowel.",
+        ],
+    },
+    {
+        "value": "phonemes",
+        "label": "Phonemes",
+        "title": "Phoneme pronunciation guide",
+        "example": "K AE1 T = cat",
+        "copy": "Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.",
+        "guide": [
+            ("AA", "father"),
+            ("AE", "cat"),
+            ("AH", "strut or sofa"),
+            ("AO", "thought"),
+            ("AW", "cow"),
+            ("AY", "my"),
+            ("EH", "bed"),
+            ("ER", "bird"),
+            ("EY", "day"),
+            ("IH", "sit"),
+            ("IY", "see"),
+            ("OW", "go"),
+            ("OY", "boy"),
+            ("UH", "book"),
+            ("UW", "too"),
+            ("CH", "chair"),
+            ("DH", "this"),
+            ("HH", "hat"),
+            ("JH", "judge"),
+            ("NG", "sing"),
+            ("SH", "shoe"),
+            ("TH", "thin"),
+            ("ZH", "measure"),
+        ],
+        "notes": [
+            "Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.",
+            "Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.",
+            "Read a phrase left to right as sounds, not spelling: F OW1 N is phone.",
+        ],
+    },
+]
+
+
+def help_topic(topic: dict[str, Any]) -> html.Div:
+    return html.Div(
+        [
+            html.H3(topic["title"]),
+            html.P(topic["copy"]),
+            html.Div(
+                [
+                    html.Span("Example"),
+                    html.Code(topic["example"]),
+                ],
+                className="help-example",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Code(phone),
+                            html.Span(word),
+                        ],
+                        className="phoneme-card",
+                    )
+                    for phone, word in topic.get("guide", [])
+                ],
+                className="phoneme-guide",
+            )
+            if topic.get("guide")
+            else None,
+            html.Ul([html.Li(note) for note in topic["notes"]]),
+        ],
+        className="help-tab-panel",
+    )
+
+
+def help_modal() -> html.Div:
+    return html.Div(
+        [
+            html.Div(className="help-backdrop"),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.P("Phonetic Guide", className="help-kicker"),
+                                    html.H2("How the sound filters work", id="help-title"),
+                                ]
+                            ),
+                            html.Button(
+                                "x",
+                                id="help-close",
+                                className="help-close-button",
+                                title="Close help",
+                                **{"aria-label": "Close help"},
+                            ),
+                        ],
+                        className="help-modal-header",
+                    ),
+                    html.P(
+                        "These labels are sound-based. Read the phoneme codes as compact pronunciation hints, then use the filters to compare idioms by how they sound.",
+                        className="help-intro",
+                    ),
+                    dcc.Tabs(
+                        id="help-tabs",
+                        value=HELP_TOPICS[0]["value"],
+                        parent_className="help-tabs-shell",
+                        className="help-tabs",
+                        children=[
+                            dcc.Tab(
+                                label=topic["label"],
+                                value=topic["value"],
+                                className="help-tab",
+                                selected_className="help-tab help-tab-selected",
+                                children=help_topic(topic),
+                            )
+                            for topic in HELP_TOPICS
+                        ],
+                    ),
+                ],
+                className="help-dialog",
+                role="dialog",
+                **{"aria-modal": "true", "aria-labelledby": "help-title"},
+            ),
+        ],
+        id="help-modal",
+        className="help-modal",
+    )
 
 
 def blank_figure(message: str) -> go.Figure:
@@ -419,16 +596,33 @@ app.layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Span("CSV"),
-                        html.Strong(CSV_PATH.name),
-                        html.Span("Output"),
-                        html.Strong(str(DATA_PATH.relative_to(ROOT))),
+                        html.Button(
+                            "?",
+                            id="help-open",
+                            className="help-button",
+                            title="Open phonetics guide",
+                            **{
+                                "aria-label": "Open phonetics guide",
+                                "aria-haspopup": "dialog",
+                                "aria-expanded": "false",
+                            },
+                        ),
+                        html.Div(
+                            [
+                                html.Span("CSV"),
+                                html.Strong(CSV_PATH.name),
+                                html.Span("Output"),
+                                html.Strong(str(DATA_PATH.relative_to(ROOT))),
+                            ],
+                            className="dataset-meta",
+                        ),
                     ],
-                    className="dataset-meta",
+                    className="masthead-tools",
                 ),
             ],
             className="masthead",
         ),
+        help_modal(),
         html.Section(
             [
                 html.Label(
@@ -648,6 +842,20 @@ def update_results(
 )
 def update_detail(table_data, selected_rows):
     return detail_panel(table_data, selected_rows)
+
+
+@app.callback(
+    Output("help-modal", "className"),
+    Output("help-open", "aria-expanded"),
+    Input("help-open", "n_clicks"),
+    Input("help-close", "n_clicks"),
+    prevent_initial_call=True,
+)
+def toggle_help(open_clicks, close_clicks):
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if trigger == "help-open":
+        return "help-modal is-open", "true"
+    return "help-modal", "false"
 
 
 if __name__ == "__main__":
