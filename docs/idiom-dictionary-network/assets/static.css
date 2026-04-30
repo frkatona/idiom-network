@@ -54,6 +54,50 @@
   background: #e6ddd0;
 }
 
+.filter-row th {
+  padding: 4px;
+  background: #fbf6ee;
+}
+
+.col-filter-wrap {
+  position: relative;
+  display: block;
+}
+
+.col-filter {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 20px 4px 6px;
+  border: 1px solid #c8bfb2;
+  border-radius: 4px;
+  font-size: 11px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.col-filter-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #9a9490;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.col-filter-clear:hover {
+  color: #3f4748;
+}
+
 .sort-indicator {
   display: inline-block;
   width: 14px;
@@ -188,9 +232,9 @@
 }
 
 .range-slider-tick.minor-tick {
-  height: 50%;
-  top: 25%;
-  background: #c8bfb2;
+  height: 75%;
+  top: 12.5%;
+  background: #a59f9b;
 }
 
 .range-slider-tick-label {
@@ -245,6 +289,7 @@
   pointer-events: auto;
   position: relative;
   z-index: 1;
+  margin-top: -9px;
 }
 
 .range-slider input[type="range"]::-moz-range-thumb {

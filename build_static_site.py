@@ -192,13 +192,49 @@ INDEX_TEMPLATE = r"""<!doctype html>
         <p class="help-intro">These labels are sound-based. Read the phoneme codes as compact pronunciation hints, then use the filters to compare idioms by how they sound.</p>
         <div class="help-tabs-shell">
           <div class="help-tabs" role="tablist" aria-label="Phonetics lessons">
-            <button id="help-tab-rhyme" class="help-tab help-tab-selected" type="button" role="tab" aria-selected="true" aria-controls="help-panel-rhyme" data-help-tab="rhyme">Rhyme Key</button>
+            <button id="help-tab-phonemes" class="help-tab help-tab-selected" type="button" role="tab" aria-selected="true" aria-controls="help-panel-phonemes" data-help-tab="phonemes">Phonemes</button>
+            <button id="help-tab-rhyme" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-rhyme" data-help-tab="rhyme">Rhyme Key</button>
             <button id="help-tab-initials" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-initials" data-help-tab="initials">Initials</button>
             <button id="help-tab-alliteration" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-alliteration" data-help-tab="alliteration">Alliteration Floor</button>
             <button id="help-tab-stress" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-stress" data-help-tab="stress">Stress</button>
-            <button id="help-tab-phonemes" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-phonemes" data-help-tab="phonemes">Phonemes</button>
           </div>
-          <section id="help-panel-rhyme" class="help-tab-panel is-active" role="tabpanel" aria-labelledby="help-tab-rhyme" data-help-panel="rhyme">
+          <section id="help-panel-phonemes" class="help-tab-panel is-active" role="tabpanel" aria-labelledby="help-tab-phonemes" data-help-panel="phonemes">
+            <h3>Phoneme pronunciation guide</h3>
+            <p>Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.</p>
+            <p class="help-link-row"><a href="https://en.wikipedia.org/wiki/ARPABET" target="_blank" rel="noreferrer noopener">ARPABET on Wikipedia</a></p>
+            <div class="help-example"><span>Example</span><code>K AE1 T = cat</code><span>Phrase</span><strong>let the cat out of the bag</strong></div>
+            <div class="phoneme-guide">
+              <div class="phoneme-card"><code>AA</code><span>f<u>a</u>ther</span></div>
+              <div class="phoneme-card"><code>AE</code><span>c<u>a</u>t</span></div>
+              <div class="phoneme-card"><code>AH</code><span>str<u>u</u>t</span></div>
+              <div class="phoneme-card"><code>AO</code><span>th<u>ou</u>ght</span></div>
+              <div class="phoneme-card"><code>AW</code><span>c<u>ow</u></span></div>
+              <div class="phoneme-card"><code>AY</code><span>m<u>y</u></span></div>
+              <div class="phoneme-card"><code>EH</code><span>b<u>e</u>d</span></div>
+              <div class="phoneme-card"><code>ER</code><span>b<u>ir</u>d</span></div>
+              <div class="phoneme-card"><code>EY</code><span>d<u>ay</u></span></div>
+              <div class="phoneme-card"><code>IH</code><span>s<u>i</u>t</span></div>
+              <div class="phoneme-card"><code>IY</code><span>s<u>ee</u></span></div>
+              <div class="phoneme-card"><code>OW</code><span>g<u>o</u></span></div>
+              <div class="phoneme-card"><code>OY</code><span>b<u>oy</u></span></div>
+              <div class="phoneme-card"><code>UH</code><span>b<u>oo</u>k</span></div>
+              <div class="phoneme-card"><code>UW</code><span>t<u>oo</u></span></div>
+              <div class="phoneme-card"><code>CH</code><span><u>ch</u>air</span></div>
+              <div class="phoneme-card"><code>DH</code><span><u>th</u>is</span></div>
+              <div class="phoneme-card"><code>HH</code><span><u>h</u>at</span></div>
+              <div class="phoneme-card"><code>JH</code><span><u>j</u>am</span></div>
+              <div class="phoneme-card"><code>NG</code><span>si<u>ng</u></span></div>
+              <div class="phoneme-card"><code>SH</code><span><u>sh</u>oe</span></div>
+              <div class="phoneme-card"><code>TH</code><span><u>th</u>in</span></div>
+              <div class="phoneme-card"><code>ZH</code><span>mea<u>s</u>ure</span></div>
+            </div>
+            <ul>
+              <li>Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.</li>
+              <li>Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.</li>
+              <li>Read a phrase left to right as sounds, not spelling: F OW1 N is phone.</li>
+            </ul>
+          </section>
+          <section id="help-panel-rhyme" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-rhyme" data-help-panel="rhyme" hidden>
             <h3>Rhyme key</h3>
             <p>A rhyme key is the ending sound signature for the whole idiom. The app starts at the last stressed vowel and keeps every phoneme to the end.</p>
             <p class="help-link-row"><a href="https://en.wikipedia.org/wiki/Rhyme" target="_blank" rel="noreferrer noopener">Rhyme on Wikipedia</a></p>
@@ -240,42 +276,6 @@ INDEX_TEMPLATE = r"""<!doctype html>
               <li>ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.</li>
               <li>The app treats primary and secondary stress as stressed.</li>
               <li>Stress matters for rhyme because the rhyme key begins near the final stressed vowel.</li>
-            </ul>
-          </section>
-          <section id="help-panel-phonemes" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-phonemes" data-help-panel="phonemes" hidden>
-            <h3>Phoneme pronunciation guide</h3>
-            <p>Phonemes are the speech sounds behind each idiom. This app uses ARPABET codes: consonants are plain letters, and vowels usually end with a stress number.</p>
-            <p class="help-link-row"><a href="https://en.wikipedia.org/wiki/ARPABET" target="_blank" rel="noreferrer noopener">ARPABET on Wikipedia</a></p>
-            <div class="help-example"><span>Example</span><code>K AE1 T = cat</code><span>Phrase</span><strong>let the cat out of the bag</strong></div>
-            <div class="phoneme-guide">
-              <div class="phoneme-card"><code>AA</code><span>f<u>a</u>ther</span></div>
-              <div class="phoneme-card"><code>AE</code><span>c<u>a</u>t</span></div>
-              <div class="phoneme-card"><code>AH</code><span>str<u>u</u>t or sof<u>a</u></span></div>
-              <div class="phoneme-card"><code>AO</code><span>th<u>ou</u>ght</span></div>
-              <div class="phoneme-card"><code>AW</code><span>c<u>ow</u></span></div>
-              <div class="phoneme-card"><code>AY</code><span>m<u>y</u></span></div>
-              <div class="phoneme-card"><code>EH</code><span>b<u>e</u>d</span></div>
-              <div class="phoneme-card"><code>ER</code><span>b<u>ir</u>d</span></div>
-              <div class="phoneme-card"><code>EY</code><span>d<u>ay</u></span></div>
-              <div class="phoneme-card"><code>IH</code><span>s<u>i</u>t</span></div>
-              <div class="phoneme-card"><code>IY</code><span>s<u>ee</u></span></div>
-              <div class="phoneme-card"><code>OW</code><span>g<u>o</u></span></div>
-              <div class="phoneme-card"><code>OY</code><span>b<u>oy</u></span></div>
-              <div class="phoneme-card"><code>UH</code><span>b<u>oo</u>k</span></div>
-              <div class="phoneme-card"><code>UW</code><span>t<u>oo</u></span></div>
-              <div class="phoneme-card"><code>CH</code><span><u>ch</u>air</span></div>
-              <div class="phoneme-card"><code>DH</code><span><u>th</u>is</span></div>
-              <div class="phoneme-card"><code>HH</code><span><u>h</u>at</span></div>
-              <div class="phoneme-card"><code>JH</code><span><u>j</u>am</span></div>
-              <div class="phoneme-card"><code>NG</code><span>si<u>ng</u></span></div>
-              <div class="phoneme-card"><code>SH</code><span><u>sh</u>oe</span></div>
-              <div class="phoneme-card"><code>TH</code><span><u>th</u>in</span></div>
-              <div class="phoneme-card"><code>ZH</code><span>mea<u>s</u>ure</span></div>
-            </div>
-            <ul>
-              <li>Stress numbers attach to vowels: 0 is unstressed, 1 is primary stress, and 2 is secondary stress.</li>
-              <li>Consonant codes such as B, K, L, M, P, S, T, and Z are read much like their letters.</li>
-              <li>Read a phrase left to right as sounds, not spelling: F OW1 N is phone.</li>
             </ul>
           </section>
         </div>

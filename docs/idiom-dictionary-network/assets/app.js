@@ -10,7 +10,8 @@
     selectedId: null,
     page: 0,
     sortCol: null,
-    sortAsc: true
+    sortAsc: true,
+    colFilters: {}
   };
 
   var els = {
@@ -238,6 +239,17 @@
       if (els.initial.value && initials(r).indexOf(els.initial.value) === -1) return false;
       if (alliterationScore(r) < floor) return false;
       if (els.hideUnknown.checked && r.unknown_words.length > 0) return false;
+      
+      // Column filters
+      for (var c = 0; c < COLUMNS.length; c++) {
+        var colId = COLUMNS[c].id;
+        var fval = state.colFilters[colId];
+        if (fval) {
+          var val = String(sortValue(r, colId)).toLowerCase();
+          if (val.indexOf(fval.toLowerCase()) === -1) return false;
+        }
+      }
+      
       return true;
     });
 
@@ -320,12 +332,16 @@
   ];
 
   function renderTable() {
+    var activeFilter = document.activeElement && document.activeElement.classList.contains('col-filter')
+      ? document.activeElement.dataset.col : null;
+
     var start = state.page * PAGE_SIZE;
     var rows = state.filtered.slice(start, start + PAGE_SIZE);
-    if (!rows.length) {
+    if (!rows.length && !Object.keys(state.colFilters).some(function(k){return state.colFilters[k];})) {
       els.table.innerHTML = '<p class="empty-state">No idioms match the current filters.</p>';
       return;
     }
+    
     var html = '<table class="static-table"><thead><tr>';
     for (var c = 0; c < COLUMNS.length; c++) {
       var col = COLUMNS[c];
@@ -335,17 +351,29 @@
       html += '<th data-sort="' + col.id + '">' + col.label +
         '<span class="' + cls + '">' + arrow + '</span></th>';
     }
+    html += '</tr><tr class="filter-row">';
+    for (var c = 0; c < COLUMNS.length; c++) {
+      var col = COLUMNS[c];
+      var fval = state.colFilters[col.id] || "";
+      var clearBtn = fval ? '<button class="col-filter-clear" data-col="' + col.id + '" aria-label="Clear filter" title="Clear filter">×</button>' : '';
+      html += '<th><div class="col-filter-wrap"><input type="text" class="col-filter" data-col="' + col.id + '" value="' + escapeHtml(fval) + '" placeholder="Filter...">' + clearBtn + '</div></th>';
+    }
     html += '</tr></thead><tbody>';
-    for (var r = 0; r < rows.length; r++) {
-      var rec = rows[r];
-      var sel = rec.id === state.selectedId ? ' class="row-selected"' : '';
-      html += '<tr' + sel + '>' +
-        '<td><button data-id="' + rec.id + '">' + escapeHtml(rec.idiom) + '</button></td>' +
-        '<td>' + rec.syllable_count + '</td>' +
-        '<td>' + escapeHtml(rec.rhyme_key || "") + '</td>' +
-        '<td>' + escapeHtml(initials(rec).join(" ")) + '</td>' +
-        '<td>' + escapeHtml(rec.stress_pattern.join("") || "") + '</td>' +
-        '<td>' + alliterationScore(rec).toFixed(2) + '</td></tr>';
+
+    if (!rows.length) {
+      html += '<tr><td colspan="' + COLUMNS.length + '" class="empty-state" style="text-align: center; padding: 20px;">No idioms match the column filters.</td></tr>';
+    } else {
+      for (var r = 0; r < rows.length; r++) {
+        var rec = rows[r];
+        var sel = rec.id === state.selectedId ? ' class="row-selected"' : '';
+        html += '<tr' + sel + '>' +
+          '<td><button data-id="' + rec.id + '">' + escapeHtml(rec.idiom) + '</button></td>' +
+          '<td>' + rec.syllable_count + '</td>' +
+          '<td>' + escapeHtml(rec.rhyme_key || "") + '</td>' +
+          '<td>' + escapeHtml(initials(rec).join(" ")) + '</td>' +
+          '<td>' + escapeHtml(rec.stress_pattern.join("") || "") + '</td>' +
+          '<td>' + alliterationScore(rec).toFixed(2) + '</td></tr>';
+      }
     }
     html += '</tbody></table>';
     html += renderPagination();
@@ -367,6 +395,33 @@
         renderTable();
       });
     });
+    
+    var colFilters = els.table.querySelectorAll(".col-filter");
+    colFilters.forEach(function(input) {
+      input.addEventListener("input", function(e) {
+        state.colFilters[e.target.dataset.col] = e.target.value;
+        state.page = 0;
+        update();
+      });
+    });
+
+    var colFiltersClear = els.table.querySelectorAll(".col-filter-clear");
+    colFiltersClear.forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        state.colFilters[e.target.dataset.col] = "";
+        state.page = 0;
+        update();
+      });
+    });
+
+    if (activeFilter) {
+      var input = els.table.querySelector('.col-filter[data-col="' + activeFilter + '"]');
+      if (input) {
+        input.focus();
+        var len = input.value.length;
+        input.setSelectionRange(len, len);
+      }
+    }
   }
 
   function renderPagination() {
