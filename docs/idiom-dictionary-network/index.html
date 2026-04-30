@@ -1,162 +1,10 @@
-from __future__ import annotations
-
-import argparse
-import json
-import shutil
-from collections import Counter
-from pathlib import Path
-
-from phonetics import build_dataset, build_indices, dataset_stats, write_csv, write_json
-
-ROOT = Path(__file__).resolve().parent
-CSV_PATH = ROOT / "american_idioms_clean_list.csv"
-OUTPUT_DIR = ROOT / "output"
-DATA_PATH = OUTPUT_DIR / "idioms_phonetic.json"
-CSV_OUTPUT_PATH = OUTPUT_DIR / "idioms_phonetic.csv"
-INDEX_OUTPUT_PATH = OUTPUT_DIR / "idioms_indices.json"
-STATS_OUTPUT_PATH = OUTPUT_DIR / "dataset_stats.json"
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Build a static GitHub Pages version of the idiom explorer."
-    )
-    parser.add_argument(
-        "--site-dir",
-        type=Path,
-        default=Path("docs"),
-        help="Output directory passed to upload-pages-artifact.",
-    )
-    parser.add_argument(
-        "--subpath",
-        default="idiom-dictionary-network",
-        help="Subdirectory where the app should be published.",
-    )
-    return parser.parse_args()
-
-
-def ensure_dataset() -> list[dict]:
-    if not DATA_PATH.exists() or not CSV_OUTPUT_PATH.exists():
-        records = build_dataset(CSV_PATH)
-        write_json(records, DATA_PATH)
-        write_csv(records, CSV_OUTPUT_PATH)
-        with INDEX_OUTPUT_PATH.open("w", encoding="utf-8") as handle:
-            json.dump(build_indices(records), handle, ensure_ascii=False, indent=2)
-        with STATS_OUTPUT_PATH.open("w", encoding="utf-8") as handle:
-            json.dump(dataset_stats(records), handle, ensure_ascii=False, indent=2)
-
-    with DATA_PATH.open(encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def browser_record(record: dict, index: int) -> dict:
-    return {
-        "id": index,
-        "idiom": record["idiom"],
-        "normalized_idiom": record["normalized_idiom"],
-        "dict_page": record["dict_page"],
-        "pdf_page": record["pdf_page"],
-        "raw_entry_head": record["raw_entry_head"],
-        "tokens": record["tokens"],
-        "phonemes": record["phonemes"],
-        "syllable_count": record["syllable_count"],
-        "rhyme_key": record["rhyme_key"],
-        "initial_phonemes": record["initial_phonemes"],
-        "initial_phonemes_with_stopwords": record["initial_phonemes_with_stopwords"],
-        "dominant_initial": record["dominant_initial"],
-        "dominant_initial_with_stopwords": record["dominant_initial_with_stopwords"],
-        "alliteration_score": record["alliteration_score"],
-        "alliteration_score_with_stopwords": record["alliteration_score_with_stopwords"],
-        "stress_pattern": record["stress_pattern"],
-        "unknown_words": record["unknown_words"],
-        "related_idioms": record.get("related_idioms", [])[:8],
-    }
-
-
-def write_static_data(records: list[dict], app_dir: Path) -> None:
-    data_dir = app_dir / "data"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    browser_records = [browser_record(record, index) for index, record in enumerate(records)]
-
-    with (data_dir / "idioms_phonetic.json").open("w", encoding="utf-8") as handle:
-        json.dump(browser_records, handle, ensure_ascii=False, separators=(",", ":"))
-
-    stats = dataset_stats(records)
-    with (data_dir / "dataset_stats.json").open("w", encoding="utf-8") as handle:
-        json.dump(stats, handle, ensure_ascii=False, indent=2)
-
-
-def write_static_assets(app_dir: Path) -> None:
-    assets_dir = app_dir / "assets"
-    assets_dir.mkdir(parents=True, exist_ok=True)
-    source_dir = ROOT / "assets"
-    for filename in ("styles.css", "static.css", "app.js"):
-        source = source_dir / filename
-        if source.exists():
-            shutil.copy2(source, assets_dir / filename)
-
-
-def write_index(app_dir: Path, records: list[dict]) -> None:
-    syllable_counts = [record["syllable_count"] for record in records]
-    rhyme_clusters = Counter(record["rhyme_key"] for record in records if record["rhyme_key"])
-    html = (
-        INDEX_TEMPLATE.replace("__RECORD_COUNT__", f"{len(records):,}")
-        .replace("__MIN_SYLLABLES__", str(min(syllable_counts)))
-        .replace("__MAX_SYLLABLES__", str(max(syllable_counts)))
-        .replace(
-            "__RHYME_CLUSTER_COUNT__",
-            str(sum(1 for count in rhyme_clusters.values() if count > 1)),
-        )
-    )
-    (app_dir / "index.html").write_text(html, encoding="utf-8")
-
-
-def write_root_redirect(site_dir: Path, subpath: str) -> None:
-    target = subpath.strip("/")
-    index = f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=./{target}/">
-  <title>Idiom Phonetics Explorer</title>
-</head>
-<body>
-  <p><a href="./{target}/">Open the Idiom Phonetics Explorer</a></p>
-</body>
-</html>
-"""
-    (site_dir / "index.html").write_text(index, encoding="utf-8")
-
-
-def main() -> None:
-    args = parse_args()
-    site_dir = args.site_dir
-    subpath = args.subpath.strip("/")
-    app_dir = site_dir / subpath
-
-    records = ensure_dataset()
-    if site_dir.exists():
-        shutil.rmtree(site_dir)
-    app_dir.mkdir(parents=True, exist_ok=True)
-
-    write_static_data(records, app_dir)
-    write_static_assets(app_dir)
-    write_index(app_dir, records)
-    write_root_redirect(site_dir, subpath)
-    (site_dir / ".nojekyll").write_text("", encoding="utf-8")
-
-    print(f"Wrote static site to {app_dir}")
-    print(f"Subpage path: /{subpath}/")
-
-
-INDEX_TEMPLATE = r"""<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Idiom Phonetics Explorer</title>
-  <meta name="description" content="Explore __RECORD_COUNT__ American idioms by syllable count, rhyme, alliteration, stress patterns, and phonetic similarity.">
+  <meta name="description" content="Explore 7,389 American idioms by syllable count, rhyme, alliteration, stress patterns, and phonetic similarity.">
   <link rel="stylesheet" href="./assets/styles.css">
   <link rel="stylesheet" href="./assets/static.css">
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -166,15 +14,15 @@ INDEX_TEMPLATE = r"""<!doctype html>
     <header class="masthead">
       <div class="masthead-copy">
         <h1>Idiom Phonetics Explorer</h1>
-        <p>__RECORD_COUNT__ American idioms indexed by syllables, rhyme, initial phonemes, and phonetic similarity.</p>
+        <p>7,389 American idioms indexed by syllables, rhyme, initial phonemes, and phonetic similarity.</p>
         <p class="static-note">Static GitHub Pages build. Data is loaded in your browser from this subpage.</p>
       </div>
       <div class="masthead-tools">
         <button id="help-open" class="help-button" type="button" title="Open phonetics guide" aria-label="Open phonetics guide" aria-haspopup="dialog" aria-expanded="false">?</button>
         <div class="dataset-meta">
-          <span>Records</span><strong>__RECORD_COUNT__</strong>
-          <span>Syllables</span><strong>__MIN_SYLLABLES__-__MAX_SYLLABLES__</strong>
-          <span>Rhyme clusters</span><strong>__RHYME_CLUSTER_COUNT__</strong>
+          <span>Records</span><strong>7,389</strong>
+          <span>Syllables</span><strong>1-17</strong>
+          <span>Rhyme clusters</span><strong>620</strong>
         </div>
       </div>
     </header>
@@ -286,7 +134,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
       <label><span>Search</span><input id="search" type="text" placeholder="Type an idiom or phrase fragment"></label>
       <label><span>Rhyme Key</span><select id="rhyme-key"><option value="">Any rhyme</option></select></label>
       <label><span>Initial Phoneme</span><select id="initial-phone"><option value="">Any initial</option></select></label>
-      <label class="syllable-range-control"><span>Syllables</span><div class="range-slider" data-min="__MIN_SYLLABLES__" data-max="__MAX_SYLLABLES__"><div id="syllable-range-track" class="range-slider-track" style="--range-start:0%;--range-end:100%"></div><div id="syllable-range-ticks" class="range-slider-ticks"></div><input id="min-syllables" type="range" min="__MIN_SYLLABLES__" max="__MAX_SYLLABLES__" step="1" value="__MIN_SYLLABLES__" aria-label="Minimum syllables"><input id="max-syllables" type="range" min="__MIN_SYLLABLES__" max="__MAX_SYLLABLES__" step="1" value="__MAX_SYLLABLES__" aria-label="Maximum syllables"></div></label>
+      <label class="syllable-range-control"><span>Syllables</span><div class="range-slider" data-min="1" data-max="17"><div id="syllable-range-track" class="range-slider-track" style="--range-start:0%;--range-end:100%"></div><div id="syllable-range-ticks" class="range-slider-ticks"></div><input id="min-syllables" type="range" min="1" max="17" step="1" value="1" aria-label="Minimum syllables"><input id="max-syllables" type="range" min="1" max="17" step="1" value="17" aria-label="Maximum syllables"></div></label>
       <label><span>Alliteration Floor</span><input id="alliteration" type="range" min="0" max="1" step="0.05" value="0"><strong id="alliteration-value">0.00</strong></label>
       <div class="checklist">
         <label><input id="ignore-stopwords" type="checkbox" checked> Ignore stopwords</label>
@@ -318,8 +166,3 @@ INDEX_TEMPLATE = r"""<!doctype html>
   <script src="./assets/app.js"></script>
 </body>
 </html>
-"""
-
-
-if __name__ == "__main__":
-    main()

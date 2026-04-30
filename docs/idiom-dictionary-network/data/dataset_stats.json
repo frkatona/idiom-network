@@ -1,0 +1,90 @@
+{
+  "records": 7389,
+  "unknown_record_count": 65,
+  "unknown_record_rate": 0.0088,
+  "unique_unknown_words": 55,
+  "top_unknown_words": [
+    [
+      "tuckered",
+      2
+    ],
+    [
+      "hibernating",
+      2
+    ],
+    [
+      "paperhanger",
+      2
+    ],
+    [
+      "fishhooks",
+      2
+    ],
+    [
+      "fishhook",
+      2
+    ],
+    [
+      "dishwater",
+      2
+    ],
+    [
+      "ditchwater",
+      2
+    ],
+    [
+      "jaybird",
+      2
+    ],
+    [
+      "pikestaff",
+      2
+    ],
+    [
+      "hatband",
+      2
+    ],
+    [
+      "willies",
+      2
+    ],
+    [
+      "livelong",
+      1
+    ],
+    [
+      "choosers",
+      1
+    ],
+    [
+      "byblow",
+      1
+    ],
+    [
+      "busman's",
+      1
+    ],
+    [
+      "nape",
+      1
+    ],
+    [
+      "barrelhead",
+      1
+    ],
+    [
+      "zs",
+      1
+    ],
+    [
+      "cheesed",
+      1
+    ],
+    [
+      "closefisted",
+      1
+    ]
+  ],
+  "rhyme_cluster_count": 620,
+  "max_syllable_count": 17
+}
