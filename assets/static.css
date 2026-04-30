@@ -25,6 +25,7 @@
 
 .static-controls input[type="range"] {
   width: 100%;
+  padding: 0;
 }
 
 /* --- Data Table --- */
@@ -184,6 +185,12 @@
   height: 100%;
   background: #9a9490;
   transform: translateX(-0.5px);
+}
+
+.range-slider-tick.minor-tick {
+  height: 50%;
+  top: 25%;
+  background: #c8bfb2;
 }
 
 .range-slider-tick-label {

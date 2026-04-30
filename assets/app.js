@@ -156,15 +156,20 @@
 
     for (var val = mn; val <= mx; val++) {
       var pct = ((val - mn) / (mx - mn)) * 100;
+      
+      var tick = document.createElement("div");
+      tick.className = "range-slider-tick";
+      if (!labeled.has(val)) {
+        tick.classList.add("minor-tick");
+      }
+      tick.style.left = pct + "%";
+      ticks.appendChild(tick);
+
       if (labeled.has(val)) {
-        var tick = document.createElement("div");
-        tick.className = "range-slider-tick";
-        tick.style.left = pct + "%";
         var lbl = document.createElement("span");
         lbl.className = "range-slider-tick-label";
         lbl.style.left = pct + "%";
         lbl.textContent = val;
-        ticks.appendChild(tick);
         ticks.appendChild(lbl);
       }
     }
