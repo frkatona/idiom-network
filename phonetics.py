@@ -249,8 +249,24 @@ def dominant_initial(initials: list[str]) -> str:
     return Counter(initials).most_common(1)[0][0]
 
 
+def strip_placeholders(text: str) -> str:
+    text = normalize_apostrophes(text).lower()
+    text = re.sub(r"\(.*?\)", "", text)
+    text = text.replace("someone or something", "")
+    text = text.replace("doing something", "")
+    text = text.replace("for doing something", "")
+    text = text.replace("to do something", "")
+    text = text.replace("someone's", "")
+    text = text.replace("one's", "")
+    text = text.replace("oneself", "")
+    text = text.replace("someone", "")
+    text = re.sub(r"\bsomething\s*$", "", text)
+    return text
+
+
 def analyze_idiom(row: dict[str, str]) -> dict[str, Any]:
-    tokens = tokenize_idiom(row["idiom"])
+    stripped_idiom = strip_placeholders(row["idiom"])
+    tokens = tokenize_idiom(stripped_idiom)
     normalized = " ".join(tokens)
     phonemes_by_word: list[list[str]] = []
     unknown_words: list[str] = []

@@ -197,6 +197,7 @@ INDEX_TEMPLATE = r"""<!doctype html>
             <button id="help-tab-initials" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-initials" data-help-tab="initials">Initials</button>
             <button id="help-tab-alliteration" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-alliteration" data-help-tab="alliteration">Alliteration Floor</button>
             <button id="help-tab-stress" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-stress" data-help-tab="stress">Stress</button>
+            <button id="help-tab-cleaning" class="help-tab" type="button" role="tab" aria-selected="false" aria-controls="help-panel-cleaning" data-help-tab="cleaning">Data Cleaning</button>
           </div>
           <section id="help-panel-phonemes" class="help-tab-panel is-active" role="tabpanel" aria-labelledby="help-tab-phonemes" data-help-panel="phonemes">
             <h3>Phoneme pronunciation guide</h3>
@@ -276,6 +277,16 @@ INDEX_TEMPLATE = r"""<!doctype html>
               <li>ARPABET vowels carry stress numbers: AH0 is unstressed, EH1 is stressed.</li>
               <li>The app treats primary and secondary stress as stressed.</li>
               <li>Stress matters for rhyme because the rhyme key begins near the final stressed vowel.</li>
+            </ul>
+          </section>
+          <section id="help-panel-cleaning" class="help-tab-panel" role="tabpanel" aria-labelledby="help-tab-cleaning" data-help-panel="cleaning" hidden>
+            <h3>Data Cleaning</h3>
+            <p>To improve phonetic groupings, the system automatically strips dictionary placeholder phrases during its sound analysis (but leaves them in the display names).</p>
+            <ul>
+              <li><strong>Parentheticals:</strong> Anything enclosed in parentheses (e.g., <code>(oneself)</code>) is removed.</li>
+              <li><strong>Exact Matches:</strong> Phrases like <code>someone or something</code>, <code>doing something</code>, and <code>someone's</code> are removed.</li>
+              <li><strong>Trailing "something":</strong> If <code>something</code> appears at the very end of an idiom, it is removed.</li>
+              <li><strong>Prepositions:</strong> Prepositions attached to placeholders (like the <code>with</code> in <code>with someone or something</code>) are preserved to maintain the core phrasal verb.</li>
             </ul>
           </section>
         </div>
