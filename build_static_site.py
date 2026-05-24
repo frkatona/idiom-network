@@ -321,6 +321,28 @@ INDEX_TEMPLATE = r"""<!doctype html>
       </section>
       <section class="panel graph-panel">
         <h2>Cluster View</h2>
+        <div class="graph-controls">
+          <label title="Distance between connected nodes">
+            <span>Link Dist</span>
+            <input id="force-link" type="range" min="10" max="150" value="60">
+          </label>
+          <label title="How strongly nodes repel each other">
+            <span>Repulsion</span>
+            <input id="force-charge" type="range" min="-200" max="0" value="-80">
+          </label>
+          <label title="Minimum space between nodes">
+            <span>Collision</span>
+            <input id="force-collide" type="range" min="1" max="30" value="12">
+          </label>
+          <label title="Base size multiplier for nodes">
+            <span>Node Size</span>
+            <input id="node-size" type="range" min="0.5" max="3" step="0.1" value="1">
+          </label>
+          <label class="toggle-label" title="Show idiom text inside nodes">
+            <input id="show-labels" type="checkbox">
+            <span>Show Labels</span>
+          </label>
+        </div>
         <div id="cluster-graph" style="position:relative"></div>
       </section>
     </main>

@@ -34,8 +34,15 @@
     helpClose: document.getElementById("help-close"),
     helpModal: document.getElementById("help-modal"),
     helpTabs: document.querySelectorAll("[data-help-tab]"),
-    helpPanels: document.querySelectorAll("[data-help-panel]")
+    helpPanels: document.querySelectorAll("[data-help-panel]"),
+    forceLink: document.getElementById("force-link"),
+    forceCharge: document.getElementById("force-charge"),
+    forceCollide: document.getElementById("force-collide"),
+    nodeSize: document.getElementById("node-size"),
+    showLabels: document.getElementById("show-labels")
   };
+
+  var graphSimulation = null;
 
   /* ---- Fuzzy search ---- */
 
@@ -45,10 +52,33 @@
     return b;
   }
 
+  function hasWildcard(s) {
+    return s.indexOf('*') !== -1 || s.indexOf('?') !== -1;
+  }
+
+  function matchWildcard(query, text) {
+    // Escape regex characters except * and ?
+    var escaped = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, function (char) {
+      if (char === '*') return '__STAR__';
+      if (char === '?') return '__QUESTION__';
+      return '\\' + char;
+    });
+    var regexStr = '^' + escaped.replace(/__STAR__/g, '.*').replace(/__QUESTION__/g, '.') + '$';
+    try {
+      var rx = new RegExp(regexStr, 'i');
+      return rx.test(text);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function fuzzyMatch(query, text) {
     if (!query) return true;
     query = query.trim().toLowerCase();
     text = text.toLowerCase();
+    if (hasWildcard(query)) {
+      return matchWildcard(query, text);
+    }
     if (text.indexOf(query) !== -1) return true;
     if (query.length < 3) return false;
     var qb = bigrams(query), tb = bigrams(text);
@@ -245,8 +275,13 @@
         var colId = COLUMNS[c].id;
         var fval = state.colFilters[colId];
         if (fval) {
+          fval = fval.trim().toLowerCase();
           var val = String(sortValue(r, colId)).toLowerCase();
-          if (val.indexOf(fval.toLowerCase()) === -1) return false;
+          if (hasWildcard(fval)) {
+            if (!matchWildcard(fval, val)) return false;
+          } else {
+            if (val.indexOf(fval) === -1) return false;
+          }
         }
       }
       
@@ -581,19 +616,25 @@
 
     var tooltip = d3.select(els.graph).append("div").attr("class", "graph-tooltip");
 
-    var simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).distance(60))
-      .force("charge", d3.forceManyBody().strength(-80))
+    var linkDist = parseInt(els.forceLink.value, 10);
+    var chargeStr = parseInt(els.forceCharge.value, 10);
+    var collideRad = parseInt(els.forceCollide.value, 10);
+    var sizeMult = parseFloat(els.nodeSize.value);
+    var showLabels = els.showLabels.checked;
+
+    function getRadius(d) { return (6 + 12 * d.allit) * sizeMult; }
+
+    graphSimulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).distance(linkDist))
+      .force("charge", d3.forceManyBody().strength(chargeStr))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(12));
+      .force("collision", d3.forceCollide().radius(collideRad));
 
     var link = svg.append("g").selectAll("line")
       .data(links).join("line").attr("class", "link");
 
-    var node = svg.append("g").selectAll("circle")
-      .data(nodes).join("circle").attr("class", "node")
-      .attr("r", function (d) { return 6 + 12 * d.allit; })
-      .attr("fill", function (d) { return color(d.syllables); })
+    var node = svg.append("g").selectAll("g.node")
+      .data(nodes).join("g").attr("class", "node")
       .on("mouseover", function (event, d) {
         tooltip.html("<strong>" + escapeHtml(d.idiom) + "</strong>" +
           "Syllables: " + d.syllables + "<br>" +
@@ -609,23 +650,68 @@
       .on("mouseout", function () { tooltip.classed("visible", false); })
       .call(d3.drag()
         .on("start", function (event, d) {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
+          if (!event.active) graphSimulation.alphaTarget(0.3).restart();
           d.fx = d.x; d.fy = d.y;
         })
         .on("drag", function (event, d) { d.fx = event.x; d.fy = event.y; })
         .on("end", function (event, d) {
-          if (!event.active) simulation.alphaTarget(0);
+          if (!event.active) graphSimulation.alphaTarget(0);
           d.fx = null; d.fy = null;
         })
       );
 
-    simulation.on("tick", function () {
+    node.append("circle")
+      .attr("r", getRadius)
+      .attr("fill", function (d) { return color(d.syllables); });
+
+    node.append("text")
+      .attr("class", "node-label")
+      .style("display", showLabels ? "block" : "none")
+      .text(function(d) { return d.idiom; });
+
+    graphSimulation.on("tick", function () {
       link.attr("x1", function (d) { return d.source.x; })
         .attr("y1", function (d) { return d.source.y; })
         .attr("x2", function (d) { return d.target.x; })
         .attr("y2", function (d) { return d.target.y; });
-      node.attr("cx", function (d) { return d.x = Math.max(10, Math.min(width - 10, d.x)); })
-        .attr("cy", function (d) { return d.y = Math.max(10, Math.min(height - 10, d.y)); });
+      node.attr("transform", function(d) {
+        d.x = Math.max(10, Math.min(width - 10, d.x));
+        d.y = Math.max(10, Math.min(height - 10, d.y));
+        return "translate(" + d.x + "," + d.y + ")";
+      });
     });
   }
+
+  // --- Graph Controls ---
+  els.forceLink.addEventListener("input", function() {
+    if (graphSimulation) {
+      graphSimulation.force("link").distance(parseInt(this.value, 10));
+      graphSimulation.alpha(0.3).restart();
+    }
+  });
+  els.forceCharge.addEventListener("input", function() {
+    if (graphSimulation) {
+      graphSimulation.force("charge").strength(parseInt(this.value, 10));
+      graphSimulation.alpha(0.3).restart();
+    }
+  });
+  els.forceCollide.addEventListener("input", function() {
+    if (graphSimulation) {
+      graphSimulation.force("collision").radius(parseInt(this.value, 10));
+      graphSimulation.alpha(0.3).restart();
+    }
+  });
+  els.nodeSize.addEventListener("input", function() {
+    if (graphSimulation) {
+      var mult = parseFloat(this.value);
+      d3.selectAll(".network-graph circle").attr("r", function(d) {
+        return (6 + 12 * d.allit) * mult;
+      });
+    }
+  });
+  els.showLabels.addEventListener("change", function() {
+    var display = this.checked ? "block" : "none";
+    d3.selectAll(".network-graph .node-label").style("display", display);
+  });
+
 })();

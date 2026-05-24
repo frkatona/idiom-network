@@ -303,10 +303,50 @@
   pointer-events: auto;
 }
 
+/* --- D3 Network Graph Controls --- */
+.graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.graph-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.graph-controls input[type="range"] {
+  width: 90px;
+  margin: 0;
+}
+
+.graph-controls .toggle-label {
+  margin-left: auto;
+  font-weight: 500;
+}
+
 /* --- D3 Network Graph --- */
 .network-graph {
   width: 100%;
   height: 520px;
+}
+
+.network-graph .node-label {
+  font-size: 10px;
+  fill: #fff;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .network-graph .link {

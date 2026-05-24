@@ -77,6 +77,7 @@ Suggested resources:
 
 ## Todo
 
+- [x] added wildcards '*' and '?' (multiple and single replacements, resp.) for filters
 - [ ] Source and method for adding additional idioms and adding a label for the type of phrase's origin
 - [ ] Cluster view improved usability
 - [ ] Fix how placeholder words are accounted for in syllable and alliteration calculations

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Idiom Phonetics Explorer</title>
-  <meta name="description" content="Explore 7,389 American idioms by syllable count, rhyme, alliteration, stress patterns, and phonetic similarity.">
+  <meta name="description" content="Explore 8,005 American idioms by syllable count, rhyme, alliteration, stress patterns, and phonetic similarity.">
   <link rel="stylesheet" href="./assets/styles.css">
   <link rel="stylesheet" href="./assets/static.css">
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -14,15 +14,15 @@
     <header class="masthead">
       <div class="masthead-copy">
         <h1>Idiom Phonetics Explorer</h1>
-        <p>7,389 American idioms indexed by syllables, rhyme, initial phonemes, and phonetic similarity.</p>
+        <p>8,005 American idioms indexed by syllables, rhyme, initial phonemes, and phonetic similarity.</p>
         <p class="static-note">Static GitHub Pages build. Data is loaded in your browser from this subpage.</p>
       </div>
       <div class="masthead-tools">
         <button id="help-open" class="help-button" type="button" title="Open phonetics guide" aria-label="Open phonetics guide" aria-haspopup="dialog" aria-expanded="false">?</button>
         <div class="dataset-meta">
-          <span>Records</span><strong>7,389</strong>
-          <span>Syllables</span><strong>1-17</strong>
-          <span>Rhyme clusters</span><strong>620</strong>
+          <span>Records</span><strong>8,005</strong>
+          <span>Syllables</span><strong>0-12</strong>
+          <span>Rhyme clusters</span><strong>711</strong>
         </div>
       </div>
     </header>
@@ -145,7 +145,7 @@
       <label><span>Search</span><input id="search" type="text" placeholder="Type an idiom or phrase fragment"></label>
       <label><span>Rhyme Key</span><select id="rhyme-key"><option value="">Any rhyme</option></select></label>
       <label><span>Initial Phoneme</span><select id="initial-phone"><option value="">Any initial</option></select></label>
-      <label class="syllable-range-control"><span>Syllables</span><div class="range-slider" data-min="1" data-max="17"><div id="syllable-range-track" class="range-slider-track" style="--range-start:0%;--range-end:100%"></div><div id="syllable-range-ticks" class="range-slider-ticks"></div><input id="min-syllables" type="range" min="1" max="17" step="1" value="1" aria-label="Minimum syllables"><input id="max-syllables" type="range" min="1" max="17" step="1" value="17" aria-label="Maximum syllables"></div></label>
+      <label class="syllable-range-control"><span>Syllables</span><div class="range-slider" data-min="0" data-max="12"><div id="syllable-range-track" class="range-slider-track" style="--range-start:0%;--range-end:100%"></div><div id="syllable-range-ticks" class="range-slider-ticks"></div><input id="min-syllables" type="range" min="0" max="12" step="1" value="0" aria-label="Minimum syllables"><input id="max-syllables" type="range" min="0" max="12" step="1" value="12" aria-label="Maximum syllables"></div></label>
       <label><span>Alliteration Floor</span><input id="alliteration" type="range" min="0" max="1" step="0.05" value="0"><strong id="alliteration-value">0.00</strong></label>
       <div class="checklist">
         <label><input id="ignore-stopwords" type="checkbox" checked> Ignore stopwords</label>
@@ -169,6 +169,28 @@
       </section>
       <section class="panel graph-panel">
         <h2>Cluster View</h2>
+        <div class="graph-controls">
+          <label title="Distance between connected nodes">
+            <span>Link Dist</span>
+            <input id="force-link" type="range" min="10" max="150" value="60">
+          </label>
+          <label title="How strongly nodes repel each other">
+            <span>Repulsion</span>
+            <input id="force-charge" type="range" min="-200" max="0" value="-80">
+          </label>
+          <label title="Minimum space between nodes">
+            <span>Collision</span>
+            <input id="force-collide" type="range" min="1" max="30" value="12">
+          </label>
+          <label title="Base size multiplier for nodes">
+            <span>Node Size</span>
+            <input id="node-size" type="range" min="0.5" max="3" step="0.1" value="1">
+          </label>
+          <label class="toggle-label" title="Show idiom text inside nodes">
+            <input id="show-labels" type="checkbox">
+            <span>Show Labels</span>
+          </label>
+        </div>
         <div id="cluster-graph" style="position:relative"></div>
       </section>
     </main>

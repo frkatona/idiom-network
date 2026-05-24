@@ -1,9 +1,13 @@
 {
-  "records": 7389,
-  "unknown_record_count": 65,
-  "unknown_record_rate": 0.0088,
-  "unique_unknown_words": 55,
+  "records": 8005,
+  "unknown_record_count": 99,
+  "unknown_record_rate": 0.0124,
+  "unique_unknown_words": 84,
   "top_unknown_words": [
+    [
+      "dont",
+      6
+    ],
     [
       "tuckered",
       2
@@ -49,6 +53,14 @@
       2
     ],
     [
+      "handbasket",
+      2
+    ],
+    [
+      "theres",
+      2
+    ],
+    [
       "livelong",
       1
     ],
@@ -71,20 +83,8 @@
     [
       "barrelhead",
       1
-    ],
-    [
-      "zs",
-      1
-    ],
-    [
-      "cheesed",
-      1
-    ],
-    [
-      "closefisted",
-      1
     ]
   ],
-  "rhyme_cluster_count": 620,
-  "max_syllable_count": 17
+  "rhyme_cluster_count": 711,
+  "max_syllable_count": 12
 }
