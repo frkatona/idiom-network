@@ -38,6 +38,7 @@
     forceLink: document.getElementById("force-link"),
     forceCharge: document.getElementById("force-charge"),
     forceCollide: document.getElementById("force-collide"),
+    forceWall: document.getElementById("force-wall"),
     nodeSize: document.getElementById("node-size"),
     showLabels: document.getElementById("show-labels")
   };
@@ -567,16 +568,23 @@
     var nodeIndex = {};
     nodes.forEach(function (n, i) { nodeIndex[n.id] = i; });
 
+    // Build adjacency for hover highlight
+    var adjacency = {};
+    nodes.forEach(function (n) { adjacency[n.id] = new Set(); });
+
     var linkSet = new Set();
     var links = [];
-    function addLink(src, tgt) {
+    function addLink(src, tgt, type, strength) {
       var key = Math.min(src, tgt) + "-" + Math.max(src, tgt);
       if (linkSet.has(key)) return;
       linkSet.add(key);
-      links.push({ source: nodeIndex[src], target: nodeIndex[tgt] });
+      links.push({ source: nodeIndex[src], target: nodeIndex[tgt],
+                   srcId: src, tgtId: tgt, type: type, strength: strength || 0.5 });
+      adjacency[src].add(tgt);
+      adjacency[tgt].add(src);
     }
 
-    // Rhyme edges
+    // Rhyme edges (stronger, drawn differently)
     var byRhyme = {};
     points.forEach(function (r) {
       if (r.rhyme_key) {
@@ -587,67 +595,154 @@
     Object.values(byRhyme).forEach(function (cluster) {
       if (cluster.length < 2) return;
       cluster.sort(function (a, b) { return a.idiom.localeCompare(b.idiom); });
-      for (var j = 1; j < Math.min(cluster.length, 10); j++) {
-        addLink(cluster[0].id, cluster[j].id);
+      for (var j = 1; j < Math.min(cluster.length, 8); j++) {
+        addLink(cluster[0].id, cluster[j].id, "rhyme", 0.9);
       }
     });
 
-    // Related idiom edges
+    // Phonetic similarity edges
     points.forEach(function (r) {
       (r.related_idioms || []).forEach(function (rel) {
         var target = points.find(function (p) { return p.idiom === rel.idiom; });
         if (target && idSet.has(target.id) && rel.score >= 0.4) {
-          addLink(r.id, target.id);
+          addLink(r.id, target.id, "phonetic", rel.score);
         }
       });
     });
 
-    // Color scale
+    // Color scale by syllable count
     var syllMin = d3.min(nodes, function (n) { return n.syllables; });
     var syllMax = d3.max(nodes, function (n) { return n.syllables; });
     var color = d3.scaleSequential(d3.interpolateViridis).domain([syllMin, syllMax]);
 
     var width = els.graph.clientWidth || 600;
     var height = 520;
-
-    var svg = d3.select(els.graph).append("svg")
-      .attr("class", "network-graph")
-      .attr("viewBox", "0 0 " + width + " " + height);
-
-    var tooltip = d3.select(els.graph).append("div").attr("class", "graph-tooltip");
-
+    var wallStr = parseInt(els.forceWall.value, 10);
     var linkDist = parseInt(els.forceLink.value, 10);
     var chargeStr = parseInt(els.forceCharge.value, 10);
     var collideRad = parseInt(els.forceCollide.value, 10);
     var sizeMult = parseFloat(els.nodeSize.value);
     var showLabels = els.showLabels.checked;
 
-    function getRadius(d) { return (6 + 12 * d.allit) * sizeMult; }
+    function getRadius(d) { return (5 + 10 * d.allit) * sizeMult; }
+
+    // Wall repulsion: custom force that pushes nodes away from all four edges
+    function forceWall(strength) {
+      var str = strength || 60;
+      function force() {
+        nodes.forEach(function (d) {
+          if (d.x !== undefined) {
+            var lx = d.x, rx = width - d.x;
+            var ty = d.y, by = height - d.y;
+            d.vx += (str / (lx * lx + 1)) - (str / (rx * rx + 1));
+            d.vy += (str / (ty * ty + 1)) - (str / (by * by + 1));
+          }
+        });
+      }
+      force.strength = function(s) { str = s; return force; };
+      return force;
+    }
+
+    var wallForce = forceWall(wallStr);
 
     graphSimulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).distance(linkDist))
-      .force("charge", d3.forceManyBody().strength(chargeStr))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(collideRad));
+      .force("link", d3.forceLink(links).distance(linkDist).strength(function(l) {
+        return l.type === "rhyme" ? 0.7 : 0.3;
+      }))
+      .force("charge", d3.forceManyBody().strength(chargeStr).distanceMax(300))
+      .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+      .force("collision", d3.forceCollide().radius(function(d) { return getRadius(d) + collideRad; }))
+      .force("wall", wallForce)
+      .alphaDecay(0.025)
+      .velocityDecay(0.4);
 
-    var link = svg.append("g").selectAll("line")
-      .data(links).join("line").attr("class", "link");
+    var svg = d3.select(els.graph).append("svg")
+      .attr("class", "network-graph")
+      .attr("viewBox", "0 0 " + width + " " + height);
 
-    var node = svg.append("g").selectAll("g.node")
-      .data(nodes).join("g").attr("class", "node")
+    // Arrowhead / gradient defs (reuse for both link types)
+    var defs = svg.append("defs");
+    defs.append("filter").attr("id", "glow")
+      .html('<feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>' +
+            '<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>');
+
+    // Legend
+    var legend = svg.append("g").attr("class", "graph-legend")
+      .attr("transform", "translate(12,12)");
+    legend.append("line").attr("x1",0).attr("y1",6).attr("x2",22).attr("y2",6)
+      .attr("class", "link link-rhyme");
+    legend.append("text").attr("x",26).attr("y",10).attr("class","legend-label").text("Rhyme");
+    legend.append("line").attr("x1",0).attr("y1",22).attr("x2",22).attr("y2",22)
+      .attr("class", "link link-phonetic");
+    legend.append("text").attr("x",26).attr("y",26).attr("class","legend-label").text("Phonetic");
+
+    // Links — curved paths
+    var linkG = svg.append("g").attr("class", "links");
+    var link = linkG.selectAll("path")
+      .data(links).join("path")
+      .attr("class", function(l) { return "link link-" + l.type; })
+      .attr("stroke-opacity", function(l) { return 0.3 + 0.5 * l.strength; })
+      .attr("stroke-width", function(l) { return l.type === "rhyme" ? 1.8 : 1; });
+
+    // Nodes
+    var nodeG = svg.append("g").attr("class", "nodes");
+    var node = nodeG.selectAll("g.node")
+      .data(nodes).join("g").attr("class", "node");
+
+    node.append("circle")
+      .attr("r", getRadius)
+      .attr("fill", function (d) { return color(d.syllables); })
+      .attr("stroke-width", 1.5);
+
+    node.append("text")
+      .attr("class", "node-label")
+      .style("display", showLabels ? "block" : "none")
+      .text(function(d) {
+        // Truncate long phrases so labels don't dominate
+        return d.idiom.length > 22 ? d.idiom.slice(0, 20) + "…" : d.idiom;
+      });
+
+    var tooltip = d3.select(els.graph).append("div").attr("class", "graph-tooltip");
+
+    // Hover: highlight neighbourhood
+    node
       .on("mouseover", function (event, d) {
-        tooltip.html("<strong>" + escapeHtml(d.idiom) + "</strong>" +
-          "Syllables: " + d.syllables + "<br>" +
-          "Rhyme: " + escapeHtml(d.rhyme) + "<br>" +
-          "Initials: " + escapeHtml(d.initials))
-          .classed("visible", true);
+        var nbrs = adjacency[d.id];
+        var connCount = nbrs.size;
+        var rhymeLinks = links.filter(function(l) {
+          return (l.srcId === d.id || l.tgtId === d.id) && l.type === "rhyme";
+        }).length;
+        tooltip.html(
+          "<strong>" + escapeHtml(d.idiom) + "</strong>" +
+          "<span class='tip-meta'>" + d.syllables + " syl &nbsp;·&nbsp; " +
+          escapeHtml(d.rhyme) + "</span>" +
+          (connCount ? "<span class='tip-conn'>" + connCount + " connection" +
+            (connCount !== 1 ? "s" : "") +
+            (rhymeLinks ? " · " + rhymeLinks + " rhyme" : "") + "</span>" : "")
+        ).classed("visible", true);
+
+        // Dim everything, then re-highlight neighbours
+        node.classed("node-dimmed", true);
+        link.classed("link-dimmed", true);
+
+        d3.select(this).classed("node-dimmed", false).classed("node-focus", true);
+        link.filter(function(l) {
+          return l.srcId === d.id || l.tgtId === d.id;
+        }).classed("link-dimmed", false).classed("link-focus", true);
+        node.filter(function(n) {
+          return nbrs.has(n.id);
+        }).classed("node-dimmed", false).classed("node-neighbour", true);
       })
       .on("mousemove", function (event) {
         var rect = els.graph.getBoundingClientRect();
-        tooltip.style("left", (event.clientX - rect.left + 12) + "px")
-          .style("top", (event.clientY - rect.top - 10) + "px");
+        tooltip.style("left", (event.clientX - rect.left + 14) + "px")
+          .style("top", (event.clientY - rect.top - 14) + "px");
       })
-      .on("mouseout", function () { tooltip.classed("visible", false); })
+      .on("mouseout", function () {
+        tooltip.classed("visible", false);
+        node.classed("node-dimmed", false).classed("node-focus", false).classed("node-neighbour", false);
+        link.classed("link-dimmed", false).classed("link-focus", false);
+      })
       .call(d3.drag()
         .on("start", function (event, d) {
           if (!event.active) graphSimulation.alphaTarget(0.3).restart();
@@ -660,23 +755,24 @@
         })
       );
 
-    node.append("circle")
-      .attr("r", getRadius)
-      .attr("fill", function (d) { return color(d.syllables); });
-
-    node.append("text")
-      .attr("class", "node-label")
-      .style("display", showLabels ? "block" : "none")
-      .text(function(d) { return d.idiom; });
+    // Curved path generator
+    function linkPath(l) {
+      var s = l.source, t = l.target;
+      if (!s.x) return "";
+      var dx = t.x - s.x, dy = t.y - s.y;
+      var dr = Math.sqrt(dx * dx + dy * dy);
+      // Rhyme edges curve more; phonetic edges are nearly straight
+      var curve = l.type === "rhyme" ? dr * 0.35 : dr * 0.12;
+      return "M" + s.x + "," + s.y +
+             "A" + curve + "," + curve + " 0 0,1 " + t.x + "," + t.y;
+    }
 
     graphSimulation.on("tick", function () {
-      link.attr("x1", function (d) { return d.source.x; })
-        .attr("y1", function (d) { return d.source.y; })
-        .attr("x2", function (d) { return d.target.x; })
-        .attr("y2", function (d) { return d.target.y; });
+      link.attr("d", linkPath);
       node.attr("transform", function(d) {
-        d.x = Math.max(10, Math.min(width - 10, d.x));
-        d.y = Math.max(10, Math.min(height - 10, d.y));
+        var r = getRadius(d);
+        d.x = Math.max(r + 4, Math.min(width - r - 4, d.x));
+        d.y = Math.max(r + 4, Math.min(height - r - 4, d.y));
         return "translate(" + d.x + "," + d.y + ")";
       });
     });
@@ -697,7 +793,17 @@
   });
   els.forceCollide.addEventListener("input", function() {
     if (graphSimulation) {
-      graphSimulation.force("collision").radius(parseInt(this.value, 10));
+      var collRad = parseInt(this.value, 10);
+      var mult = parseFloat(els.nodeSize.value);
+      graphSimulation.force("collision").radius(function(d) {
+        return (5 + 10 * d.allit) * mult + collRad;
+      });
+      graphSimulation.alpha(0.3).restart();
+    }
+  });
+  els.forceWall.addEventListener("input", function() {
+    if (graphSimulation) {
+      graphSimulation.force("wall").strength(parseInt(this.value, 10));
       graphSimulation.alpha(0.3).restart();
     }
   });
@@ -705,7 +811,7 @@
     if (graphSimulation) {
       var mult = parseFloat(this.value);
       d3.selectAll(".network-graph circle").attr("r", function(d) {
-        return (6 + 12 * d.allit) * mult;
+        return (5 + 10 * d.allit) * mult;
       });
     }
   });
